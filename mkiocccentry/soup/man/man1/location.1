@@ -1,0 +1,280 @@
+.\" section 1 man page for location
+.\"
+.\" This man page was first written by Landon Curt Noll for the IOCCC
+.\" in 2023 with minor improvements and fixes by Cody Boone Ferguson.
+.\"
+.\" Location is relative. :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH location 1 "22 May 2024" "location" "IOCCC tools"
+.SH NAME
+.B location
+\- look up ISO 3166 codes, location names by name (substring, full) or print the entire table
+.SH SYNOPSIS
+.B location
+.RB [\| \-h \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-V \|]
+.RB [\| \-c \|]
+.RB [\| \-n \|]
+.RB [\| \-s \|]
+.RB [\| \-a \|]
+.RI [\| location
+.IR ... \|]
+.SH DESCRIPTION
+.B location
+without any arguments will print the entire table of ISO 3166 codes, followed by a tab, followed by the formal location name for the given ISO 3166 code.
+.sp 1
+Given arguments,
+.B location
+tool will assume the arguments are ISO 3166 code(s) and print corresponding formal location name(s).
+.sp 1
+Arguments are case insensitive.
+.sp 1
+ISO 3166 code(s) are Alpha-2 codes: two UPPER case characters.
+.sp 1
+With
+.BR \-n ,
+the arguments
+are assumed to be the formal location name(s).
+The
+.B location
+tool will print their corresponding ISO 3166 code(s).
+.PP
+To search by substring use the
+.B \-s
+option.
+To show all matches use the
+.B \-a
+option.
+Showing all matches is less useful without the
+.B \-n
+option because country codes are two characters and are exact matches and the option is only relevant if an arg is specified.
+The use of
+.B \-s
+requires an arg to the program much like
+.B \-n
+but it does not require the
+.B \-n
+option itself.
+.PP
+If verbosity is > level 0 and
+.B \-a
+is used it will show a string that shows name and code to more easily identify each match.
+.SH OPTIONS
+.TP
+.B \-h
+Show help and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.IR level
+(def: 0).
+.TP
+.B \-V
+Show version and exit.
+.TP
+.B \-c
+Use common name, otherwise by default, the official name is used.
+.TP
+.B \-n
+Assume the arguments are formal location name(s) and print
+their corresponding ISO 3166 code(s).
+.sp
+By default the arguments are ISO 3166 code(s)
+and their corresponding formal location name(s) are printed.
+.sp
+The use of
+.B \-n
+requires at least one argument.
+.TP
+.B \-s
+Search by substring instead of by an exact match.
+.sp
+Use of
+.B \-s
+requires at least one arg.
+.TP
+.B \-a
+Show all matches.
+.sp
+Use of
+.B \-a
+is less useful without the
+.B \-n
+option and only checked for if at least one arg is specified but nonetheless it is possible to use
+.B \-a
+without
+.BR \-n .
+.SH EXIT STATUS
+.TP
+0
+All is OK
+.TQ
+1
+At least one location argument could not be found
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+command line error
+.TQ
+>= 4
+internal error
+.SH BUGS
+.PP
+If you have an issue with the tool you can report it at
+.br
+.IR \<https://github.com/ioccc\-src/mkiocccentry/issues\> .
+.SH EXAMPLES
+.PP
+Print the entire location table:
+.sp
+.RS
+.ft B
+ ./location
+.ft R
+.RE
+.sp
+The table is printed as a two character ISO 3166 code
+(in UPPER CASE), followed by a tab, followed by
+the corresponding formal location name.
+.PP
+Print the formal location name given ISO 3166 codes:
+.sp
+.RS
+.B ./location AU CA UA US XX
+.RE
+.PP
+The ISO 3166 codes may be in any case:
+.sp
+.RS
+.B ./location CX AU cA cz gb us Ie
+.RE
+.sp
+.PP
+Print the ISO 3166 codes given a formal location name:
+.sp
+.RS
+.B ./location 'Equatorial Guinea'
+.RE
+.PP
+Show all matches with the substring
+.I united
+in the name:
+.sp
+.RS
+.B ./location \-a \-s \-n united
+.RE
+.sp
+.PP
+Show all matches with the substring
+.I germ
+in the name, showing both name and code to more easily identify each match:
+.sp
+.RS
+.B ./location \-a \-s \-n \-v 1 germ
+.RE
+.sp
+We note that, as the above example shows, Germany is a country full of 'germ ridden people' but we do not mean offence by this: it's just a fun pun of one of the author's.
+.PP
+Search by substring for both Unit and Germ with a verbosity of level 1, to show both name and code:
+.sp
+.RS
+.B ./location \-asnv1 Unit Germ
+.RE
+.sp
+This should show:
+.RS
+United Arab Emirates ==> AE
+.br
+United Kingdom of Great Britain and Northern Ireland (the) ==> GB
+.br
+United States Miscellaneous Pacific Islands ==> PU
+.br
+Tanzania, United Republic of ==> TZ
+.br
+United Kingdom ==> UK
+.br
+United States Minor Outlying Islands ==> UM
+.br
+United Nations ==> UN
+.br
+United States of America ==> US
+.br
+German Democratic Republic ==> DD
+.br
+Germany ==> DE
+.br
+.RE
+.SH EDITORIAL NOTES
+.sp
+The primary source of the location table is:
+.sp
+.in +0.5i
+.IR \<https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Decoding_table\> .
+.in -0.5i
+.sp
+Additional information may be found at:
+.sp
+.in +0.5i
+.IR \<https://en.wikipedia.org/wiki/ISO_3166-1#Officially_assigned_code_elements\>
+.br
+.IR \<https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2\>
+.br
+.IR \<https://www.iso.org/obp/ui/#iso:pub:PUB500001:en\>
+.br
+.IR \<https://www.iso.org/glossary-for-iso-3166.html\>
+.br
+.IR \<https://www.iso.org/obp/ui/#search\>
+.in -0.5i
+.sp
+The location table was initially compiled on 2023 June 04
+as follows:
+We added all Officially assigned code elements,
+all Exceptionally reserved code elements,
+all Transitionally reserved code elements,
+all Indeterminately reserved code elements,
+all Formerly assigned code elements,
+and all User-assigned code elements.
+.sp
+This means you will find a few codes that belong to
+entities that no longer are recognized, entities
+that are/were temporary, codes that are reserved for
+future use, codes for Road Traffic Conventions,
+codes for Property Organizations, duplicate codes, etc.
+.sp
+We do not list WIPO codes as they are not formally reserved.
+They refer to Patent and related WIPO
+organizations: as such they do not represent places
+where an IOCCC winner would live.
+.sp
+In a number of cases, the common name is used in
+place of a longer formal location name.
+.sp
+Because
+.BR mkiocccentry (1)
+recommends using the ISO 3166 codes
+.B XX
+for specifying an anonymous location,
+the formal name
+.B User-assigned code XX
+was renamed:
+.B Anonymous location\c
+\&.
+.sp
+We mean no offense by this list: we simply tried to
+include all ISO 3166 codes.
+Please pardon any typos.
+.SH SEE ALSO
+.PP
+.BR mkiocccentry (1)
+.br
+.BR \<https://www.iso.org/iso-3166-country-codes.html\>

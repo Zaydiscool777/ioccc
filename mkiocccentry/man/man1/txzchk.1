@@ -1,0 +1,255 @@
+.\" section 1 man page for txzchk
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" txzchk was written by Cody Boone Ferguson.
+.\"
+.\" Dedicated to:
+.\"
+.\"	The many poor souls who have been tarred and feathered:
+.\"
+.\"	    "Because sometimes people throw feathers on tar." :-(
+.\"
+.\"	And to my wonderful Mum and my dear cousin and friend Dani:
+.\"
+.\"	    "Because even feathery balls of tar need some love.: :-)
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" When you're playing with tar and you run you might trip and fall into a
+.\" tar pit. And if it's Hallowe'en you might be running from a ghost or vampire
+.\" or some kind of monster. :-) That's why you should use txzchk(1): to make sure
+.\" you won't get stuck in tar! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH txzchk 1 "16 November 2024" "txzchk" "IOCCC tools"
+.SH NAME
+.B txzchk
+\- sanity checker tool used on IOCCC compressed tarballs
+.SH SYNOPSIS
+.B txzchk
+.RB [\| \-h \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-q \|]
+.RB [\| \-e \|]
+.RB [\| \-f
+.IR feathers \|]
+.RB [\| \-w \|]
+.RB [\| \-V \|]
+.RB [\| \-t
+.IR tar \|]
+.RB [\| \-F
+.IR fnamchk \|]
+.RB [\| \-T \|]
+.RB [\| \-E
+.IR ext \|]
+.I tarball_path
+.SH DESCRIPTION
+.B txzchk
+runs a series of sanity tests on IOCCC compressed tarballs.
+It is invoked by
+.BR mkiocccentry (1)
+after the tarball is formed, reporting any feathers stuck in the tarball (i.e. issues found) and exiting the program accordingly; if
+.B txzchk
+does not return 0,
+.B mkiocccentry
+will exit with an error.
+.PP
+The program runs
+.B tar \-tJvf
+on the
+.I tarball_path
+and parses the output of the command, performing a variety of tests on the tarball.
+As a side effect it will show the user the contents of the tarball.
+The tarball is
+.B NOT
+extracted.
+.B txzchk
+also runs the IOCCC tool
+.BR fnamchk (1)
+on the file, verifying that the tarball is properly named (this is also how it gets the directory name that the files should be in).
+.PP
+In other words it makes sure that
+.BR mkiocccentry (1)
+was used and that there was no screwing around with the resultant tarball.
+As an important part of the judging process, the Judges will directly execute this tool on every submission's tarball.
+.SH OPTIONS
+.TP
+.B \-h
+Show help and exit.
+.TP
+.BI \-v\  level
+Set verbosity level.
+.TP
+.B \-q
+Quiet mode.
+Silence msg(), warn(), warnp() if verbosity level is 0.
+.TP
+.B \-e
+Entertainment (or if you prefer, Easter egg) mode.
+.TP
+.BI \-f\  feathers
+Define how many feathers is feathery :\-) (used by
+.BR \-e )
+.TP
+.B \-w
+Always show warnings.
+This is used in the
+.BR txzchk_test (8)
+script because it must see the warnings.
+.TP
+.B \-V
+Show version and exit.
+.TP
+.BI \-t\  tar
+Set path to
+.BR tar (1)
+to
+.IR tar .
+It must accept the
+.B \-J
+option.
+.B txzchk
+checks
+.I /usr/bin/tar
+and
+.I /bin/tar
+if this option is not specified.
+.TP
+.BI \-F\  fnamchk
+Set path to the IOCCC
+.BR fnamchk (1)
+tool to
+.IR fnamchk .
+If this option is not specified the program looks under the current working directory and
+.IR /usr/local/bin .
+.TP
+.B \-T
+Assume
+.I tarball_path
+is a text file: use
+.BR fopen (3)
+and
+.BR fclose (3)
+instead of
+.BR popen (3)
+and
+.BR pclose (3)
+and don't require
+.B tar
+program.
+.TP
+.BI \-E\  ext
+Change extension for
+.BR fnamchk (1)
+to validate (don't include the dot).
+This is used in conjunction with
+.B \-T
+above for
+.B TESTING
+purposes only!
+.SH EXIT STATUS
+.TP
+0
+no feathers stuck in tarball  :\-)
+.TQ
+1
+tarball was successfully parsed :\-) but there's at least one feather stuck in it  :\-(
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+invalid command line, invalid option or option missing an argument
+.TQ
+>= 10
+internal error has occurred or unknown tar listing format has been encountered
+.SH NOTES
+.PP
+This tool was written by Cody Boone Ferguson for the IOCCC Judges in early 2022 for the IOCCCMOCK, IOCCC28 and all future IOCCC competitions after discussing the requirements with Landon Curt Noll, one of the IOCCC Judges.
+For more history see
+.BR txzchk (1),
+.IR CHANGES.md ,
+.IR README.md ,
+the GitHub git log and of course reading the source itself.
+.PP
+No pitman or coal mines were harmed in the making of this tool and neither were any pine trees or birch trees.
+Whether the fact no coal mines were harmed is a good or bad thing might be debatable but nevertheless none were harmed. :\-)
+More importantly, no tar pits \- including the
+.B La Brea Tar Pits
+\- were disturbed in the making of this tool. :\-)
+.SH BUGS
+.PP
+There are no issues, there are only feathers! :\-)
+.PP
+(Well, okay: Cody Boone Ferguson wrote it! :) )
+.PP
+On a more serious note, if you have an issue with the tool please report it at the GitHub issues page.
+You can find it at
+.br
+.IR <https://github.com/ioccc\-src/mkiocccentry/issues> .
+If you would please mention
+.B @xexyl
+as part of the report that would be appreciated.
+.SH EXAMPLES
+.PP
+Run the program on the tarball
+.IR submit.test\-1.1644094311.txz :
+.sp
+.RS
+.ft B
+ ./txzchk submit.test\-1.1644094311.txz
+.ft R
+.RE
+.PP
+Run the program on the tarball
+.IR submit.test\-1.1644094311.txz ,
+specifying an alternate path to
+.B tar
+and
+.BR fnamchk :
+.sp
+.RS
+.ft B
+ ./txzchk \-t /path/to/some/tar \-F ./filenamechk submit.test\-1.1644094311.txz
+.ft R
+.RE
+.PP
+Run the program on the file
+.IR submit.test\-1.1644094311.txt ,
+specifying that it's a text file (which means
+.B \-T
+and
+.B \-E
+have to be used):
+.sp
+.RS
+.ft B
+ ./txzchk \-T \-E txt submit.test\-1.1644094311.txt
+.ft R
+.RE
+.SH SEE ALSO
+.PP
+The IOCCC tools
+.BR txzchk (1),
+\&, the test suite
+.BR txzchk_test (8),
+.BR fnamchk (1)
+and
+.BR mkiocccentry (1).
+.br
+The tarry
+.BR tar (1)
+command itself.
+.br
+And don't forget the very tarry
+.BR La\ Brea\ Tar\ Pits :
+.I <https://tarpits.org>

@@ -1,0 +1,220 @@
+.\" section 1 man page for chkentry
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH chkentry 1 "19 May 2024" "chkentry" "IOCCC tools"
+.SH NAME
+.B chkentry
+\- check JSON files in an IOCCC entry
+.SH SYNOPSIS
+.B chkentry
+.RB [\| \-h \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-J
+.IR level \|]
+.RB [\| \-q \|]
+.I info.json
+.I auth.json
+.SH DESCRIPTION
+.PP
+Validates the
+.I .info.json
+and/or
+.I .auth.json
+of an IOCCC entry.
+In the two argument form,
+.I info.JSON
+is the path of an IOCCC entry information JSON file, and
+.I auth.JSON
+is the path of an IOCCC entry author JSON file.
+If
+.B info.JSON
+is
+.I .
+(dot), then this file is ignored.
+If
+.B auth.JSON
+is
+.I .
+(dot), then this file is ignored.
+In the one argument form,
+.I submission_dir
+is assumed to be a directory containing both
+.I .info.json
+and
+.I .auth.json
+files.
+.PP
+As a sanity check, the
+.BR mkiocccentry (1)
+program executes
+.B chkentry
+after the
+.I .info.json
+and
+.I .auth.json
+files have been created, once per file, testing that everything is well.
+If
+.BR mkiocccentry (1)
+sees a 0 exit status, then all is well.
+For a non\-zero exit code, the tool aborts because any problems detected by
+.B chkentry
+based on what
+.BR mkiocccentry (1)
+wrote into
+.I .info.json
+and/or
+.I .auth.json
+indicates there is a serious mismatch between what
+.BR mkiocccentry (1)
+is doing and what
+.B chkentry
+expects.
+.PP
+.SH OPTIONS
+.TP
+.B \-h
+Print help and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.I level
+(def: 0).
+.TP
+.BI \-J\  level
+Set JSON parser verbosity to
+.I level
+(def: 0).
+.TP
+.B \-V
+Print version and exit.
+.TP
+.B \-q
+Set quiet mode.
+Silences msg(), warn(), warnp() if verbosity level is 0.
+.SH EXIT STATUS
+.TP
+0
+all OK
+.TQ
+1
+JSON files(s) are valid JSON but one or more semantic checks failed
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+command line error
+.TQ
+4
+file(s) not valid JSON and no semantic checks were performed
+.TQ
+>=10
+internal error
+.SH NOTES
+.B chkentry
+is primarily used by other tools (not humans) but you may wish to test your entry JSON files manually if you're trying something clever.
+It would be a good idea to note why you think it's clever.
+.SH BUGS
+.PP
+More than 0 humans work on it! :)
+.PP
+The IOCCC uses the term
+.B entry
+to refer to a submission that won the IOCCC whereas the term
+.B submission
+is used to refer to something given to the IOCCC judges for consideration when the IOCCC is open.
+If the IOCCC was being consistent, then
+.BR chkentry (1)
+and the
+.BR mkiocccentry (1)
+tools would not have "entry" in their names.
+On the other hand, if the names of those tools were named in a consistent fashion, they would have been named
+.B chksubmission
+and
+.B mkiocccsubmission
+respectively, which is a bit too long for a tool name, and it would have ruined the
+.B mkiocccentry
+pun.
+The IOCCC decided to
+.B NOT rename the tools
+in the name of
+.BR fputs (3)
+backward compatibility. :)
+.PP
+As a compromise, the name of the compressed tarball produced by
+.BR mkiocccentry (1)
+was changed to start with
+.I submit
+instead of
+.IR entry .
+The
+.BR fnamchk (1)
+tool was by necessity changed accordingly.
+.PP
+Astute proof readers might find circumstances where variables, comments, error messages and prompt strings use
+.B entry
+instead of
+.BR submission .
+You are welcome to submit pull requests to
+.I https://github.com/ioccc-src/mkiocccentry/pulls
+correct such oversights in variables,
+comments, error messages and prompt strings.
+Note, however, that there are many cases where the words
+.B entry
+and
+.B entries
+are actually correct: they would only be incorrect if they refer to an IOCCC submission that has not won.
+In other words if it refers to submissions won then it should be
+.B entry
+or
+.BR entries .
+.PP
+If you have an issue with the tool you can open an issue at
+.br
+.IR https://github.com/ioccc\-src/mkiocccentry/issues\> .
+.SH EXAMPLES
+.PP
+Run the tool on an IOCCC entry located in the directory
+.I submit.1d5E8ac2\-2cF5\-48FB\-aD81\-3210d16af8ca\-0.1652598666:
+.sp
+.RS
+.ft B
+ ./chkentry submit.1d5E8ac2\-2cF5\-48FB\-aD81\-3210d16af8ca\-0.1652598666/{.info,.auth}.json
+.ft R
+.RE
+.PP
+Run the tool on just the IOCCC entry information JSON file
+.IR test/info.JSON :
+.sp
+.RS
+.ft B
+ ./chkentry test/info.JSON .
+.ft R
+.RE
+.PP
+Run the tool on just the IOCCC entry author JSON file
+.IR test/auth.JSON :
+.sp
+.RS
+.ft B
+ ./chkentry . test/auth.JSON
+.ft R
+.RE
+.SH SEE ALSO
+.PP
+.BR chkentry_test (8)
+.BR mkiocccentry (1)
+and
+.BR jparse (1)

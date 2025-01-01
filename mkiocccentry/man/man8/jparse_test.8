@@ -1,0 +1,333 @@
+.\" section 8 man page for jparse_test.sh
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH jparse_test.sh 8 "15 November 2024" "jparse_test.sh" "jparse tools"
+.SH NAME
+.B jparse_test.sh
+\- test jparse on one or more files with one or more one\-line JSON blobs
+.SH SYNOPSIS
+.B jparse_test.sh
+.RB [\| \-h \|]
+.RB [\| \-V \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-D
+.IR dbg_level \|]
+.RB [\| \-J
+.IR level \|]
+.RB [\| \-q \|]
+.RB [\| \-j
+.IR jparse \|]
+.RB [\| \-d
+.IR json_tree \|]
+.RB [\| \-s
+.IR subdir \|]
+.RB [\| \-Z
+.IR topdir \|]
+.RB [\| \-k \|]
+.RB [\| \-f \|]
+.RB [\| \-L \|]
+.RB [\| \-F \|]
+.RI [\| file
+.IR ... \|]
+.SH DESCRIPTION
+.B jparse_test.sh
+runs a battery of tests to verify that
+.BR jparse (1)
+is working.
+.PP
+If the
+.B \-d
+option is used, it uses
+.BR find (1)
+to look under the JSON tree for good and bad files (two kinds, unless the
+.B \-L
+option is used, see below) that must pass or fail respectively.
+The normal files that must pass are in the subdirectory called
+.I good
+and the normal files that must fail are in the subdirectory called
+.IR bad .
+If the
+.B \-L
+option is not used, another subdirectory,
+.IR bad_loc ,
+must also exist, under which are bad files that have corresponding error files.
+These error files have the location of failure and specific error messages that must match the output of
+.BR jparse (1),
+and if they do not it is an error.
+The purpose here is to make sure that error location reporting is valid.
+However, in case someone has some strange paths, the error files will be incorrect which will make the script fail, so we do provide the
+.B \-L
+option to avoid this.
+.PP
+One may also specify files which should be a file of one or more JSON blobs, as a string, one per line, unless
+.B \-F
+is used (see below).
+The file name
+.I \-
+means read from stdin.
+.PP
+If the
+.B \-f
+option is used, then the strings in the files specified must be invalid JSON, and if any are not, it is an error.
+It is on the user to make sure that they use the right file in order to get valid results, but having this option allows one to verify that the input is either valid or invalid, depending on what is needed.
+.PP
+If no file is specified, then the script tries to read from the default files, one with valid JSON strings and one with invalid JSON strings.
+If a default file cannot be found, or is not a regular readable file, a warning message is printed, but it is not an error.
+Even if
+.B \-f
+is not given, the script will run a fail test on the default invalid JSON strings file, just like with the strings file with valid JSON, as long as it exists.
+But just like with the valid JSON strings file, if it is not a regular readable file, it is not an error, but a warning is issued; the point of
+.B \-f
+is to allow for other files to have invalid JSON strings.
+.PP
+If the
+.B \-F
+option is used then the files specified are meant to be tested as actual JSON files, not one or more JSON blobs per line.
+In this case, stdin is not read from, not even if
+.I \-
+is specified.
+.PP
+The script keeps a log of all the tests in
+.B jparse_test.log
+for later inspection.
+If the
+.BI \-k
+option is specified, then the temporary stderr file is kept for inspection.
+This option allows one to compare the error messages with the error files in the
+.I bad_loc
+subdirectory, for example.
+.SH OPTIONS
+.TP
+.B \-h
+Print help and exit.
+.TP
+.B \-V
+Print version and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.IR level
+(def: 0).
+.TP
+.BI \-D\  level
+Set debug level to
+.IR level
+(def: 0).
+.TP
+.BI \-J\  level
+Set JSON verbosity level to
+.IR level
+(def: 0).
+.TP
+.BI \-q
+Suppress some of the output (def: loud :\-) ).
+.TP
+.BI \-j\  jparse
+Set path to the JSON parser jparse to
+.IR jparse .
+.TP
+.BI \-d\  json_tree
+Set json tree to look for good and bad files under to
+.IR json_tree .
+.TP
+.BI \-s\  subdir
+Set subdirectory in
+.I json_tree
+above the
+.I good
+and
+.I bad
+directories.
+To not specify a subdirectory specify
+.I .
+(dot) as the directory.
+.TP
+.BI \-Z\  topdir
+Set the top directory (where the jparse binary and the test_jparse subdirectory reside) in order for the tests to work right, in specific situations.
+If not specified, the script tries to determine the top level directory by first checking the current working directory for the file
+.B jparse.c
+and if this fails by checking for the file
+.B ../jparse.c
+and finally if that fails by checking for the file
+.BR ../../jparse.c .
+This allows the jparse test suite to properly run in the presumably rare case where one has a copy of the jparse repo in a subdirectory of their project.
+.TP
+.B \-k
+Keep temporary stderr files in the directory for investigation.
+.TP
+.B \-f
+Files given to the script are expected to have invalid, not valid, JSON strings (one per line).
+.TP
+.B \-L
+Skip error location tests.
+.TP
+.B \-F
+Test files given on the command line as actual full JSON documents, not JSON strings.
+.SH EXIT STATUS
+.TP
+0
+all tests are OK
+.TQ
+1
+at least one test failed
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+invalid command line
+.TQ
+4
+.B jparse
+not a regular executable file
+.TQ
+5
+couldn't create writable log file
+.TQ
+6
+missing directory or directories
+.TQ
+7
+missing JSON file
+.TQ
+>=10
+internal error
+.SH FILES
+.I json_teststr.txt
+.RS
+The default file that
+.B jparse_test.sh
+reads from.
+.RE
+.I jparse_test.log
+.RS
+The log file kept by
+.BR jparse_test.sh .
+It will be removed prior to each time the script is run to keep the state of the file consistent with the run.
+.RE
+.I test_JSON
+.RS
+The default JSON tree with
+.IR good ,
+.IR bad ,
+and
+.IR bad_loc
+subdirectories for files that must pass, fail and fail with the exact error (error location testing), respectively.
+.RE
+.SH NOTES
+The JSON parser
+.B jparse
+was co\-developed by Cody Boone Ferguson and Landon Curt Noll (one of the IOCCC Judges) in support for IOCCCMOCK, IOCCC28 and beyond.
+.SS Error locations
+.PP
+The purpose of this is to verify that the error locations are correctly reported.
+The error files have the errors that
+.BR jparse (1)
+.B MUST EXACTLY
+report.
+.PP
+Whenever a JSON file is added that has a syntax error that is needed to test that location reporting in the JSON parser error messages is correct, one must do the following things.
+.PP
+First change to the test subdirectory.
+Assuming you're at the top level directory:
+.sp
+.RS
+.ft B
+cd test_jparse
+.ft R
+.RE
+.PP
+Then you
+.B MUST
+verify that the output of
+.B jparse
+on the files added is correct.
+If it is you must then regenerate all the error files in
+.I test_JSON/bad_loc
+like:
+.sp
+.RS
+.ft B
+make rebuild_jparse_err_files
+.ft R
+.RE
+.PP
+Then you must go back to the top level directory and run the test suite:
+.sp
+.RS
+.ft B
+make test
+.ft R
+.RE
+.PP
+After that go back to the
+.I test_jparse
+subdirectory and run
+.sp
+.RS
+.ft B
+make test
+.ft
+.RE
+.sp
+and make sure that it also passes okay.
+Assuming everything is OK you can then add the JSON files and the error files like:
+.sp
+.RS
+.ft B
+git add ./test_jparse/test_JSON/bad_loc/*.json
+.br
+git add ./test_jparse/test_JSON/bad_loc/*.err
+.ft R
+.RE
+.PP
+Finally commit these files and make a pull request to have them added to the repo.
+.SH BUGS
+.PP
+If one is in the test suite subdirectory then one must
+.B STILL
+specify the subdirectory name in paths under that directory and no directory for the 
+.B jparse
+binary itself.
+On the other hand, if the directory structure is not correct it might be that the script fails.
+In other words, the test suite is meant to be run from the jparse (or a clone of the jparse) repo itself.
+Even so, depending on options used, you can change this behaviour somewhat.
+.PP
+If you have a problem with the tool (not JSON itself! :\-) ) you can report it at the GitHub issues page.
+It can be found at
+.br
+.IR \<https://github.com/xexyl/jparse/issues\> .
+.SH EXAMPLES
+.PP
+Run test suite from top level (repo root) directory:
+.sp
+.RS
+.ft B
+ make test
+.ft R
+.RE
+.PP
+Run the test script from the top level (repo root) directory manually, without testing the files under the
+.B test_JSON
+subdirectory:
+.sp
+.RS
+.ft B
+ ./test_jparse/jparse_test.sh
+.ft R
+.RE
+.SH SEE ALSO
+.BR jparse (1),
+.BR jparse (3)

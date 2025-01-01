@@ -1,0 +1,216 @@
+.\" section 8 man page for all_sem_ref.sh
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH all_sem_ref.sh 8 "05 February 2023" "all_sem_ref.sh" "IOCCC tools"
+.SH NAME
+.B all_sem_ref.sh
+\- form
+.I *.json.c
+and
+.I *.json.h
+semantic table files
+.SH SYNOPSIS
+.B all_sem_ref.sh
+.RB [\| \-h \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-V]
+.RB [\| \-j
+.IR jsemtblgen \|]
+.RB [\| \-J
+.IR jsemcgen.sh \|]
+.I info.head.c
+.I info.tail.c
+.I info.head.h
+.I info.tail.h
+.I auth.head.c
+.I auth.tail.c
+.I auth.head.h
+.I auth.tail.h
+.I info_dir
+.I auth_dir
+.I ref_dir
+.SH DESCRIPTION
+This tool forms semantic table files under a given directory.
+JSON semantics tables allow for semantic tests on valid JSON such as testing counts of JSON objects at various depths and testing values of JSON objects as well as testing relationships between values of JSON objects.
+.PP
+In general, a JSON semantics table is an array of
+.B struct json_sem
+that can be used to drive checks on the semantics of valid JSON.
+This can be done for any JSON file but in particular this tool is for the
+.I .info.json
+and
+.I .auth.json
+files as part of the judging process for the IOCCC.
+.PP
+The
+.I info.head.c
+file is a
+.I .info.json
+style header for .c semantic table files.
+.br
+The
+.I info.tail.c
+file is a
+.I .info.json
+style footer for .c semantic table files.
+.br
+The
+.I info.head.h
+file is a
+.I .info.json
+style header for .h semantic table files.
+.br
+The
+.I info.tail.h
+file is a
+.I .info.json
+style footer for .h semantic table files.
+.PP
+The
+.I auth.head.c
+file is a
+.I .auth.json
+style header for .c semantic table files.
+.br
+The
+.I auth.tail.c
+file is a
+.I .auth.json
+style footer for .c semantic table files.
+.br
+The
+.I auth.head.h
+file is a
+.I .auth.json
+style header for .h semantic table files.
+.br
+The
+.I auth.tail.h
+file is a
+.I .auth.json
+style footer for .h semantic table files.
+.PP
+The
+.I info_dir
+directory is expected to have
+.I *.json
+files as
+.I .info.json
+files.
+.br
+The
+.I auth_dir
+directory is expected to have
+.I *.json
+files as
+.I .auth.json
+files.
+.br
+The
+.I ref_dir
+directory is a subdirectory under which the semantic table files are written.
+.SH OPTIONS
+.TP
+.B \-h
+Show help and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.I level
+(def: 0).
+.TP
+.B \-V
+Show version and exit.
+.TP
+.BI \-j\  jsemtblgen
+Set path of
+.BR jsemtblgen (8)
+to
+.IR jsemtblgen .
+.TP
+.BI \-J\  jsemcgen.sh
+Set path of
+.BR jsemcgen (8)
+to
+.IR jsemcgen.sh .
+.SH EXIT STATUS
+.TP
+0
+all OK
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+command line error
+.TQ
+4
+.B jsemcgen.sh
+and/or
+.B jsemtblgen
+not found or not executable
+.TQ
+5
+missing or not readable header or footer file
+.TQ
+6
+missing, not readable, or not writable
+.IR info_dir ,
+.I auth_dir
+and/or
+.I ref_dir
+.TQ
+>= 10
+internal error
+.SH NOTES
+.PP
+The JSON parser
+.B jparse
+was co\-developed by Cody Boone Ferguson and Landon Curt Noll (one of the IOCCC Judges) in support for IOCCCMOCK, IOCCC28 and beyond.
+.PP
+This tool is needed in order to generate the JSON semantics table for
+.BR chkentry (1).
+.SH BUGS
+If you have a problem with the tool (not JSON itself! :\-) ) you can report it at the GitHub issues page.
+It can be found at
+.br
+.IR \<https://github.com/ioccc\-src/mkiocccentry/issues\> \|.
+.SH EXAMPLE
+The
+.I Makefile
+contains the following
+.BR make (1)
+.B all_sem_ref
+rule.
+It runs the following commands via the
+.I soup/Makefile
+to build the JSON semantic tables for
+.BR chkentry (8):
+.sp 1
+.in +0.5i
+.nf
+rm -rf ref
+mkdir ref
+\&./all_sem_ref.sh \-v 1 \-j ../jparse/jsemtblgen \-J ../jparse/jsemcgen.sh -- \e
+    chk.info.head.c chk.info.tail.c chk.info.head.h chk.info.tail.h \e
+    chk.auth.head.c chk.auth.tail.c chk.auth.head.h chk.auth.tail.h \e
+    ../test_ioccc/test_JSON/info.json/good \e
+    ../test_ioccc/test_JSON/auth.json/good ref
+.fi
+.in -0.5i
+.SH SEE ALSO
+.BR jsemtblgen (8),
+.BR jsemcgen (8),
+.BR chkentry (1)

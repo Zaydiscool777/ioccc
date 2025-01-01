@@ -1,0 +1,136 @@
+.\" section 8 man page for chkentry_test.sh
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH chkentry_test.sh 8 "30 January 2023" "chkentry_test.sh" "IOCCC tools"
+.SH NAME
+.B chkentry_test.sh
+\- test chkentry on good and bad auth.json and info.json files
+.SH SYNOPSIS
+.B chkentry_test.sh
+.RB [\| \-h \|]
+.RB [\| \-V \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-D
+.IR dbg_level \|]
+.RB [\| \-J
+.IR level \|]
+.RB [\| \-q \|]
+.RB [\| \-c
+.IR chkentry \|]
+.RB [\| \-d
+.IR json_tree \|]
+.SH DESCRIPTION
+.B chkentry_test.sh
+tests each file in the
+.I test_JSON/auth.json
+and
+.I test_JSON/info.json
+subdirectories
+It uses
+.BR find (1)
+to look under the JSON tree for good and bad files that must pass or fail respectively.
+The files that must pass are in the subdirectory called
+.I good
+and the files that must fail are in the subdirectory called
+.IR bad .
+It keeps a log of all the tests in
+.I chkentry_test.log
+for later inspection.
+.SH OPTIONS
+.TP
+.B \-h
+Print help and exit.
+.TP
+.B \-V
+Print version and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.IR level
+(def: 0).
+.TP
+.BI \-D\  level
+Set debug level to
+.IR level
+(def: 0).
+.TP
+.BI \-J\  level
+Set JSON verbosity level to
+.IR level
+(def: 0).
+.TP
+.B \-q
+Set quiet mode.
+This will affect the JSON parser as well.
+.TP
+.BI \-c\  chkentry
+Set path to chkentry to
+.IR chkentry .
+.TP
+.BI \-d\  json_tree
+Set json tree to look for good and bad files under to
+.IR json_tree ,
+.SH EXIT STATUS
+.TP
+0
+all OK
+.TQ
+1
+all JSON files were valid JSON; however some chkentry semantic tests failed
+.TQ
+2
+.B \-h
+and help string printed or
+.B \-V
+and version string printed
+.TQ
+3
+invalid command line
+.TQ
+4
+missing or non-executable chkentry
+.TQ
+5
+missing or non-readable json_tree directory or subdirectory
+.TQ
+6
+some files were invalid JSON; chkentry correctly tested all other files
+.TQ
+7
+some files were invalid JSON and some chkentry tests failed
+.TQ
+>=10
+internal error
+.SH FILES
+.I chkentry_test.log
+.RS
+The log file kept by
+.BR chkentry_test.sh .
+It will be removed prior to each time the script is run to keep the state of the file consistent with the run.
+.RE
+.I test_JSON
+.RS
+The default JSON tree with good and bad subdirectories for files that must pass and fail, respectively.
+.RE
+.SH NOTES
+The JSON parser
+.BR jparse (1)
+and
+.BR chkentry (1)
+were co\-developed by Cody Boone Ferguson and Landon Curt Noll (one of the IOCCC Judges) in support for IOCCCMOCK, IOCCC28 and beyond.
+.SH BUGS
+If you have a problem with the tool (not JSON itself! :\-) ) you can report it at the GitHub issues page.
+It can be found at
+.br
+.IR \<https://github.com/ioccc\-src/mkiocccentry/issues\> .
+.SH SEE ALSO
+.BR chkentry (1)

@@ -1,0 +1,161 @@
+.\" section 1 man page for hostchk.sh
+.\"
+.\" This man page was first written by Cody Boone Ferguson for the IOCCC
+.\" in 2022.
+.\"
+.\" Humour impairment is not virtue nor is it a vice, it's just plain
+.\" wrong: almost as wrong as JSON spec mis-features and C++ obfuscation! :-)
+.\"
+.\" "Share and Enjoy!"
+.\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+.\"
+.TH hostchk.sh 8 "30 January 2023" "hostchk.sh" "IOCCC tools"
+.SH NAME
+.B hostchk.sh
+\- run a series of checks on your system to help determine if you can correctly use the mkiocccentry toolkit
+.SH SYNOPSIS
+.B hostchk.sh
+.RB [\| \-h \|]
+.RB [\| \-V \|]
+.RB [\| \-v
+.IR level \|]
+.RB [\| \-D
+.IR dbg_level \|]
+.RB [\| \-c
+.IR cc \|]
+.RB [\| \-w
+.IR work_dir \|]
+.RB [\| \-f \|]
+.RB [\| \-Z
+.IR topdir \|]
+.SH DESCRIPTION
+.B hostchk.sh
+runs a series of checks to determine if you will be able to create an acceptable IOCCC entry tarball.
+If any step fails we recommend you use the
+.BR bug_report (1)
+script to create a log file for filing a bug.
+.SH OPTIONS
+.TP
+.B \-h
+Print help and exit.
+.TP
+.B \-V
+Print version and exit.
+.TP
+.BI \-v\  level
+Set verbosity level to
+.IR level
+(def: 0).
+.TP
+.BI \-D\  level
+Set verbosity level for the tests the script runs to
+.IR level
+(def: 0).
+.TP
+.BI \-c\  cc
+Set path to the compiler (cc) to
+.IR cc .
+.TP
+.BI \-w\  work_dir
+Use a working directory of
+.IR work_dir .
+By default a temporary working directory is used.
+The
+.I work_dir
+must not exist.
+.TP
+.B \-f
+Fast compile mode.
+Instead of testing one required system header file at a time it does it all at once.
+The default is not to use
+.B \-f
+because it will give more information to help identify the problem (and also let you know which files work).
+.TP
+.BI \-Z\  topdir
+Declare the top level directory of this repository.
+The
+.B topdir
+directory must contain the source file
+.IR mkiocccentry.c .
+By default, the source file
+.I mkiocccentry.c
+is searched for in the current directory, and then the parent of current directory.
+.sp 1
+If
+.BI \-Z\  topdir
+is used on the command line, then the source file
+.I mkiocccentry.c
+need not exist in the
+.B topdir
+directory.
+If
+.BI \-Z\   topdir
+is not used on the command line, and the source file
+.I mkiocccentry.c
+is not found in the current directory or the parent of current directory, then this command exits as if there was a command line error.
+.sp 1
+Once the
+.B topdir
+directory is established, this command moves to that directory.
+.SH EXIT STATUS
+.TP
+0
+all OK
+.TQ
+2
+\-h and help string printed or \-V and version string printed
+.TQ
+3
+invalid command line
+.TQ
+4
+compiler not found or not executable file
+.TQ
+>= 10
+internal error or a test failed
+.SH NOTES
+.PP
+Even if the script exits 0 it does not necessarily mean there is no problem.
+If you feel there is a problem that was not detected you may still open an issue on the GitHub page (or email the Judges though this is discouraged because the Judges did not write all tools for instance this tool itself).
+In that case you should use
+.BR bug_report (1)
+and include the log that it creates in your report.
+.PP
+The output can seem redundant if it fails and
+.BR hostchk (1)
+was run via the Makefile since it will issue a warning that will tell you to use
+.BR hostchk (1)
+and also tell you to use
+.BR bug_report (1)
+which itself will tell you to use
+.BR hostchk (1)
+which will trigger the warning again.
+Sorry in advance if (to use an American English phrase which I will happily use for a pun for a pun not made is a wasted opportunity) this throws you for a loop :\-) but we feel that it's better that the warning is really stressed as it most likely means that you won't be able to use the toolkit to successfully create a valid IOCCC tarball.
+But now that you're in the loop it shouldn't even matter! :\-)
+.SH BUGS
+.PP
+No bugs are known except that a human wrote it. :\-)
+.PP
+Please remember that just because the script reports issues does not mean that there's a bug with the script itself.
+Instead it probably is a problem with one of the tools on your system which the script detected and is reporting.
+If that is the case please do use
+.BR bug_report (1)
+and attach the log file it creates in your report.
+.PP
+Nevertheless, if you feel there is an issue with this tool you may open an issue at the GitHub issues page.
+Once again though, depending on the issue it might be a good idea to run
+.BR bug_report (1)
+and attach the log file it creates.
+.BR bug_report (1)
+will tell you how and where to report bugs as well.
+.SH EXAMPLES
+.PP
+Run script in fast mode:
+.sp
+.RS
+.ft B
+ ./test_ioccc/hostchk.sh \-f
+.ft R
+.RE
+.SH SEE ALSO
+.BR bug_report (1)

@@ -1,0 +1,214 @@
+{
+    "no_comment" : "mandatory comment: because comments were removed from the original JSON spec",
+    "timestamp" : "Fri 01 Nov 2024 15:59:34 UTC",
+    "name" : "jparse",
+    "description" : "JSON parser API and tools written in C",
+    "repo" : "https://github.com/xexyl/jparse",
+    "jparse" : [
+        {
+            "file" : "jparse.l",
+            "description" : "JSON scanner in flex grammar form",
+            "generator" : [
+                {
+                    "name": "flex",
+                    "minimum_version" : "2.6.4",
+                    "output_files" : [
+                        {
+                            "source" : "jparse.c",
+                            "header" : "jparse.lex.h"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "file" : "jparse.y",
+            "description" : "JSON parser in bison grammar form",
+            "generator": [
+                {
+                    "name" : "bison",
+                    "minimum_version" : "3.8.2",
+                    "output_files" : [
+                        {
+                            "source" : "jparse.tab.c",
+                            "header" : "jparse.tab.h"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "tools" : [
+        {
+            "name" : "jparse",
+            "description" : "JSON parser stand-alone tool",
+            "files" : [
+                {
+                "source" : "jparse_main.c",
+                "header" : "jparse_main.h"
+                }
+            ]
+        },
+        {
+            "name" : "jstrdecode",
+            "description" : "tool to decode a string for JSON",
+            "files" : [
+                {
+                    "source" : "jstrdecode.c",
+                    "header" : "jstrdecode.h"
+                }
+            ]
+        },
+        {
+            "name" : "jstrencode",
+            "description" : "tool to encode JSON decoded strings",
+            "files" : [
+                {
+                    "source" : "jstrencode.c",
+                    "header" : "jstrencode.h"
+                }
+            ]
+        },
+        {
+            "name" : "verge",
+            "description" : "tool to determine if first version is greater or equal to the second version",
+            "files" : [
+                {
+                    "source" : "verge.c",
+                    "header" : "verge.h"
+                }
+            ]
+        },
+
+        {
+            "name" : "jsemtblgen",
+            "description" : "tool to generate JSON semantics table",
+            "files" : [
+                {
+                    "source" : "jsemtblgen.c",
+                    "header" : "jsemtblgen.h"
+                }
+            ]
+        }
+    ],
+    "directories" : [
+        {
+            "test_jparse" : [
+                {
+                    "tools" : [
+                        {
+                            "name" : "test_jparse/jnum_chk",
+                            "description" : "tool to check JSON number string conversions",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/jnum_chk.c",
+                                    "header" : "test_jparse/jnum_chk.h"
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/jnum_gen",
+                            "description" : "tool to generate JSON number string conversion test data",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/jnum_gen.c",
+                                    "header" : "test_jparse/jnum_gen.h"
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/pr_jparse_test",
+                            "description" : "test print function calls",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/pr_jparse_test.c",
+                                    "header" : "test_jparse/pr_jparse_test.h"
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/run_jparse_tests.sh",
+                            "description" : "perform the complete suite of tests for the jparse repo",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/run_jparse_tests.sh",
+                                    "header" : null
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/jparse_test.sh",
+                            "description" : "test JSON parser on valid and invalid JSON file(s)",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/jparse_test.sh",
+                                    "header" : null
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/jstr_test.sh",
+                            "description" : "JSON string decoding and encoding tests",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/jstr_test.sh",
+                                    "header" : null
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/is_available.sh",
+                            "description" : "check if a tool is an executable file, and in some cases, is sane",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/is_available.sh",
+                                    "header" : null
+                                }
+                            ]
+                        },
+                        {
+                            "name" : "test_jparse/prep.sh",
+                            "description" : "prep for a release - actions for make prep and make release",
+                            "files" : [
+                                {
+                                    "source" : "test_jparse/prep.sh",
+                                    "header" : null
+                                }
+                            ]
+                        }
+                    ],
+                    "subdirectories" : [
+                        {
+                            "name" : "test_jparse/test_JSON",
+                            "description" : "directories with JSON files to validate as good or bad",
+                            "subdirectories" : [
+                                {
+                                    "name" : "test_jparse/test_JSON/good",
+                                    "description" : "files that must be valid JSON"
+                                },
+                                {
+                                    "name" : "test_jparse/test_JSON/bad",
+                                    "description" : "files that must be invalid JSON"
+                                },
+                                {
+                                    "name" : "test_jparse/test_JSON/bad_loc",
+                                    "description" : "files that must be invalid JSON, with corresponding error files, to validate error location reporting"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "authors" : [
+        {
+            "name" : "Cody Boone Ferguson",
+            "url" : "https://xexyl.net"
+        },
+        {
+            "name" : "Landon Curt Noll",
+            "url" : "http://www.isthe.com"
+        }
+    ]
+}
