@@ -118,8 +118,10 @@ https://www.reddit.com/r/git/comments/bqx85v/how_do_i_overwrite_one_branch_with_
 https://stackoverflow.com/questions/5509543/how-do-i-properly-force-a-git-push
 
 ChatGPT for the knowledge of
-- `({if...})`
-- `(int[]){...}`
+- `({if...})` (unused) (c99)
+- `(int[]){...}` (also unused) (i'm bad at type casting)
+
+https://cppreference.com/ for knowledge that `?:` succeeds `==` (so, `a == b ? 'c' : 'd'` is true)
 
 ### General remarks
 
