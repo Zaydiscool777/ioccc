@@ -114,8 +114,12 @@ following the instructions above.-->
 
 ### Helped from:
 https://www.reddit.com/r/git/comments/bqx85v/how_do_i_overwrite_one_branch_with_another_branch/
+
 https://stackoverflow.com/questions/5509543/how-do-i-properly-force-a-git-push
-ChatGPT for the knowledge of `({if...})`
+
+ChatGPT for the knowledge of
+- `({if...})`
+- `(int[]){...}`
 
 ### General remarks
 
