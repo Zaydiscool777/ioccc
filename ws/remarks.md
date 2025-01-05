@@ -112,9 +112,26 @@ you want more help with using `mkiocccentry`.
 Delete through this line, rename as `remarks.md` and put your comments below,
 following the instructions above.-->
 
-# Helped from:
+### Helped from:
 https://www.reddit.com/r/git/comments/bqx85v/how_do_i_overwrite_one_branch_with_another_branch/
 https://stackoverflow.com/questions/5509543/how-do-i-properly-force-a-git-push
 
-# Original Idea:
-chess game
+ChatGPT for the knowledge of
+- `({if...})` (unused) (c99)
+- `(int[]){...}` (also unused) (i'm bad at type casting)
+
+https://cppreference.com/ for knowledge that `?:` succeeds `==` (so, `a == b ? 'c' : 'd'` is true)
+
+### General remarks
+
+i toyed with `for` statements without a `{}`. cool.
+
+### This is totally a chess program
+
+Nothing to _POINT_ here...
+
+i thought out of the _BOX_ for this one...
+
+
+
+pluh
