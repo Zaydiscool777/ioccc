@@ -1,0 +1,4 @@
+run = "rm ./a.out ; gcc -Wno-error ws/prog.c ; ./a.out"
+
+[deployment]
+run = ["sh", "-c", "rm ./a.out ; gcc -Wno-error ws/prog.c ; ./a.out"]

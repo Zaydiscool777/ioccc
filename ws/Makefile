@@ -33,7 +33,7 @@ TRUE= true
 # NOTE: Please don't add -Wno-unknown-warning-option to CSILENCE.
 #
 #
-CSILENCE=
+CSILENCE= -Wno-error
 
 # Attempt to silence unknown warnings
 #
@@ -41,7 +41,7 @@ CSILENCE=
 #
 #	CUNKNOWN= -Wno-unknown-warning-option
 #
-CUNKNOWN=
+CUNKNOWN= -Wno-unknown-warning-option
 
 # Common C compiler warning flags
 #
