@@ -46,7 +46,13 @@ int turn(int coord, int type){ // int coord = y_coord * 8 + x_coord;
     for(int i = 0; i < 81; i++)
     {
         //if(board[i] == 79 || board[i] == 88){z++; flip_pb = 1;}
-        switch(board[i]){case 79:o++;z++;case 88:z++;flip_pb=1;}
+        switch(board[i])
+        {
+            case 79:
+                o++; z++;
+            case 88:
+                z++; flip_pb=1;
+        }
     }
     player_bit ^= flip_pb;
     return z;
