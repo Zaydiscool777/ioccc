@@ -20,4 +20,4 @@
  (!(i%9)){ printf("\n"); } printf
 ("%c",b[i]); } scanf("%d%d%d",&x,
 &y,&t); } while(!(z=T(y*9+x,t)>63
-)); printf("%i",o-32);}//////////
+)); printf("%i",o-32)/*********/;}
