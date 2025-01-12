@@ -124,7 +124,15 @@ https://cppreference.com/ for knowledge that `?:` succeeds `==` (so, `a == b ? '
 
 ### General remarks
 
-i toyed with `for` statements without a `{}`. cool.
+i toyed with `for` statements without a `{}`. cool
+
+Also tried the mkiocccentry thing.
+
+```
+    ./mkiocccentry ./ws ./ws/prog.c ./ws/Makefile ./ws/remarks.md 
+```
+
+First test submission: mkiocccentry/ws/submit.test-0.1736702464.txz
 
 ### This is totally a chess program
 
@@ -132,6 +140,14 @@ Nothing to _POINT_ here...
 
 i thought out of the _BOX_ for this one...
 
+### Other remarks
 
+Try to see how you can create a box with only three edges. Hint: it has
+something to do with the board being an array rather than a matrix.
+Also, you can input numbers bigger than 8, and it will still work.
+If you are stuck on how to play, try compiling `good.c`.
+
+Sadly, I can't be sure if it fully works. Not like anyone wants to play
+a game invented a long time ago for an hour.
 
 pluh
