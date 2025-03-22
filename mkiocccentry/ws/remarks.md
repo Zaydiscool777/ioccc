@@ -119,8 +119,9 @@ https://stackoverflow.com/questions/5509543/how-do-i-properly-force-a-git-push
 ChatGPT for the knowledge of
 - `({if...})` (unused) (c99)
 - `(int[]){...}` (also unused) (i'm bad at type casting)
+- `if(...)singlestatement;` 
 
-https://cppreference.com/ for knowledge that `?:` succeeds `==` (so, `a == b ? 'c' : 'd'` is true)
+https://cppreference.com/ for knowledge that `?:` succeeds `==` (so, `a == b ? 'c' : 'd'` is 'c', which becomes true)
 
 ### General remarks
 
@@ -129,7 +130,7 @@ i toyed with `for` statements without a `{}`. cool
 Also tried the mkiocccentry thing.
 
 ```
-    ./mkiocccentry ./ws ./ws/prog.c ./ws/Makefile ./ws/remarks.md 
+    ./mkiocccentry ws ws/prog.c ws/Makefile ws/remarks.md 
 ```
 
 First test submission: mkiocccentry/ws/submit.test-0.1736702464.txz
@@ -140,12 +141,14 @@ Nothing to _POINT_ here...
 
 i thought out of the _BOX_ for this one...
 
+I'm not sure if this obscuration technique has been used before.
+
 ### Other remarks
 
 Try to see how you can create a box with only three edges. Hint: it has
 something to do with the board being an array rather than a matrix.
 Also, you can input numbers bigger than 8, and it will still work.
-If you are stuck on how to play, try compiling `good.c`.
+If you are stuck on how to play, try compiling `good.c`, and looking at its source code.
 
 Sadly, I can't be sure if it fully works. Not like anyone wants to play
 a game invented a long time ago for an hour.

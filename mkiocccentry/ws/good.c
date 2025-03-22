@@ -66,3 +66,4 @@ int main(){
 	} while(!( z = turn(y_coord * 9 + x_coord, type) > 63));
 	printf("%i", o - 32);
 }
+//nice number of lines
