@@ -2,9 +2,30 @@
 #
 # ioccc_test.sh - perform the complete suite of tests for the mkiocccentry repo
 #
-# This script was co-developed in 2022 by:
+# Copyright (c) 2021-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
-#	@xexyl
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
+#
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# This script was co-developed in 2021-2025 by Landon Curt Noll and Cody Boone
+# Ferguson:
+#
+#  @xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 # and:
@@ -13,14 +34,35 @@
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
 # Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 
 
 # setup
 #
-export IOCCC_TEST_VERSION="1.0.3 2024-12-31"
+export IOCCC_TEST_VERSION="2.0.1 2025-03-14"
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 # attempt to fetch system specific path to the tools we need
 #
+
 # get tar path
 TAR="$(type -P tar 2>/dev/null)"
 # Make sure TAR is set:
@@ -40,13 +82,33 @@ if [[ -z "$TAR" ]]; then
     TAR="/usr/bin/tar"
 fi
 
+# get make path
+MAKE="$(type -P make 2>/dev/null)"
+# Make sure MAKE is set:
+#
+# It's possible that the path could not be obtained so we set it to the default
+# in this case.
+#
+# We could do it via parameter substitution but since it tries to execute the
+# command if for some reason the tool ever works without any args specified it
+# could make the script block (if we did it via parameter substitution we would
+# still have to redirect stderr to /dev/null). It would look like:
+#
+#   ${MAKE:=/usr/bin/make} 2>/dev/null
+#
+# but due to the reasons cited above we must rely on the more complicated form:
+if [[ -z "$MAKE" ]]; then
+    MAKE="/usr/bin/make"
+fi
 
-export USAGE="usage: $0 [-h] [-v level] [-J json_level] [-t tar] [-V] [-Z topdir]
+
+export USAGE="usage: $0 [-h] [-v level] [-J json_level] [-t tar] [-m make] [-V] [-Z topdir]
 
     -h              print help and exit
     -v level        set debug level (def: 0)
     -J json_level   set json debug level (def: 0)
     -t tar	    path to tar that accepts -J option (def: $TAR)
+    -m make         path to GNU compatible make (def: $MAKE)
     -V              print version and exit
     -Z topdir	    top level build directory (def: try . or ..)
 
@@ -69,7 +131,7 @@ export TOPDIR=
 
 # parse args
 #
-while getopts :hv:J:VZ:t: flag; do
+while getopts :hv:J:VZ:t:m: flag; do
     case "$flag" in
     h)	echo "$USAGE" 1>&2
 	exit 2
@@ -85,6 +147,8 @@ while getopts :hv:J:VZ:t: flag; do
         ;;
     t)	TAR="$OPTARG";
 	;;
+    m)  MAKE="$OPTARG";
+        ;;
     \?) echo "$0: ERROR: invalid option: -$OPTARG" 1>&2
 	echo 1>&2
 	echo "$USAGE" 1>&2
@@ -411,8 +475,8 @@ fi
 echo | tee -a -- "$LOGFILE"
 echo "RUNNING: test_ioccc/mkiocccentry_test.sh" | tee -a -- "$LOGFILE"
 echo | tee -a -- "$LOGFILE"
-echo "test_ioccc/mkiocccentry_test.sh -Z $TOPDIR -t $TAR" | tee -a -- "$LOGFILE"
-test_ioccc/mkiocccentry_test.sh -Z "$TOPDIR" -t "$TAR" | tee -a -- "$LOGFILE"
+echo "test_ioccc/mkiocccentry_test.sh -m $MAKE -Z $TOPDIR -t $TAR" | tee -a -- "$LOGFILE"
+test_ioccc/mkiocccentry_test.sh -m "$MAKE" -Z "$TOPDIR" -t "$TAR" | tee -a -- "$LOGFILE"
 status="${PIPESTATUS[0]}"
 if [[ $status -ne 0 ]]; then
     echo "$0: ERROR: test_ioccc/mkiocccentry_test.sh non-zero exit code: $status" 1>&2 | tee -a -- "$LOGFILE"
@@ -520,25 +584,26 @@ fi
 
 # chkentry_test.sh
 #
-echo | tee -a -- "$LOGFILE"
-echo "RUNNING: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
-echo | tee -a -- "$LOGFILE"
-echo "test_ioccc/chkentry_test.sh -v 1 -d ./test_ioccc/test_JSON -c ./chkentry" | tee -a -- "$LOGFILE"
-test_ioccc/chkentry_test.sh -v 1 -d ./test_ioccc/test_JSON -c ./chkentry | tee -a -- "$LOGFILE"
-status="${PIPESTATUS[0]}"
-if [[ $status -ne 0 ]]; then
-    echo "$0: ERROR: test_ioccc/chkentry_test.sh non-zero exit code: $status" 1>&2 | tee -a -- "$LOGFILE"
-    FAILURE_SUMMARY="$FAILURE_SUMMARY
-    test_ioccc/chkentry_test.sh non-zero exit code: $status"
-    EXIT_CODE="27"
-    echo | tee -a -- "$LOGFILE"
-    echo "EXIT_CODE set to: $EXIT_CODE" | tee -a -- "$LOGFILE"
-    echo | tee -a -- "$LOGFILE"
-    echo "FAILED: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
-else
-    echo | tee -a -- "$LOGFILE"
-    echo "PASSED: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
-fi
+# XXX - disable until we can create new tests with one arg mode
+# echo | tee -a -- "$LOGFILE"
+# echo "RUNNING: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
+# echo | tee -a -- "$LOGFILE"
+# echo "test_ioccc/chkentry_test.sh -v 1 -d ./test_ioccc/test_JSON -c ./chkentry" | tee -a -- "$LOGFILE"
+# test_ioccc/chkentry_test.sh -v 1 -d ./test_ioccc/test_JSON -c ./chkentry | tee -a -- "$LOGFILE"
+# status="${PIPESTATUS[0]}"
+# if [[ $status -ne 0 ]]; then
+#     echo "$0: ERROR: test_ioccc/chkentry_test.sh non-zero exit code: $status" 1>&2 | tee -a -- "$LOGFILE"
+#     FAILURE_SUMMARY="$FAILURE_SUMMARY
+#     test_ioccc/chkentry_test.sh non-zero exit code: $status"
+#     EXIT_CODE="27"
+#     echo | tee -a -- "$LOGFILE"
+#     echo "EXIT_CODE set to: $EXIT_CODE" | tee -a -- "$LOGFILE"
+#     echo | tee -a -- "$LOGFILE"
+#     echo "FAILED: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
+# else
+#     echo | tee -a -- "$LOGFILE"
+#     echo "PASSED: test_ioccc/chkentry_test.sh" | tee -a -- "$LOGFILE"
+# fi
 
 # report overall status
 #

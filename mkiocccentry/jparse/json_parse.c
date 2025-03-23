@@ -3,18 +3,40 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
  *	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
  *
+ * "Because sometimes even the IOCCC Judges need some help." :-)
+ *
  * "Share and Enjoy!"
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
-
 
 /* special comments for the seqcexit tool */
 /* exit code out of numerical order - ignore in sequencing - ooo */
@@ -530,7 +552,7 @@ jdecencchk(int entertainment)
 		err(155, __func__, "mstr2: %s != decstr: %s", mstr2, mstr);
 		not_reached();
 	    } else {
-		msg(mstr2);
+		msg("%s", mstr2);
 		dbg(DBG_MED, "%s: %s == %s: true", decstr, mstr, mstr2);
 	    }
 
@@ -585,7 +607,7 @@ jdecencchk(int entertainment)
 		err(158, __func__, "mstr2: %s != decstr: %s", mstr2, mstr);
 		not_reached();
 	    } else {
-		msg(mstr2);
+		msg("%s", mstr2);
 		dbg(DBG_MED, "%s: %s == %s: true", decstr, mstr, mstr2);
 	    }
 
@@ -646,7 +668,7 @@ jdecencchk(int entertainment)
 		    err(161, __func__, "mstr2: %s != decstr: %s", mstr2, mstr);
 		    not_reached();
 		} else {
-		    msg(mstr2);
+		    msg("%s", mstr2);
 		    dbg(DBG_MED, "%s: %s == %s: true", decstr, mstr, mstr2);
 		}
 
@@ -706,7 +728,7 @@ jdecencchk(int entertainment)
 		    err(164, __func__, "mstr2: %s != decstr: %s", mstr2, mstr);
 		    not_reached();
 		} else {
-		    msg(mstr2);
+		    msg("%s", mstr2);
 		    dbg(DBG_MED, "%s: %s == %s: true", decstr, mstr, mstr2);
 		}
 
@@ -767,7 +789,7 @@ jdecencchk(int entertainment)
 			err(167, __func__, "mstr2: %s != decstr: %s", mstr2, mstr);
 			not_reached();
 		    } else {
-			msg(mstr2);
+			msg("%s", mstr2);
 			dbg(DBG_MED, "%s: %s == %s: true", decstr, mstr, mstr2);
 		    }
 
@@ -1319,8 +1341,8 @@ decode_json_string(char const *ptr, size_t len, size_t mlen, size_t *retlen)
     char *beyond = NULL;    /* beyond the end of the allocated encoding string */
     char *p = NULL;	    /* next place to encode */
     char n = 0;		    /* next character beyond a \\ */
-    int xa = 0;		    /* first hex character numeric value */
-    int xb = 0;		    /* second hex character numeric value */
+    uint32_t xa = 0;        /* first hex character numeric value */
+    uint32_t xb = 0;        /* second hex character numeric value */
     char c = 0;		    /* character to decode or third hex character after \u */
     size_t i;
     int32_t bytes = 0;
@@ -1487,7 +1509,7 @@ decode_json_string(char const *ptr, size_t len, size_t mlen, size_t *retlen)
 
 		    warn(__func__, "reached EOF trying to scan for hex bytes");
 		    return NULL;
-		} else if (scanned == 1 || (scanned == 2 && surrogates_to_unicode(xa, xb) < 0)) {
+		} else if (scanned == 1 || (scanned == 2 && surrogates_to_unicode((int32_t)xa, (int32_t)xb) < 0)) {
 		    /*
 		     * no possible surrogate pair found so proceed like there
 		     * was not another \uxxxx
@@ -1525,7 +1547,7 @@ decode_json_string(char const *ptr, size_t len, size_t mlen, size_t *retlen)
 		     * in this case we have to check if we have a valid
 		     * surrogate pair.
 		     */
-		    surrogate = surrogates_to_unicode(xa, xb);
+		    surrogate = surrogates_to_unicode((int32_t)xa, (int32_t)xb);
 		    if (surrogate < 0) {
 			if (retlen != NULL) {
 			    *retlen = 0;
@@ -1644,8 +1666,8 @@ json_decode(char const *ptr, size_t len, bool quote, size_t *retlen)
     size_t mlen = 0;	    /* length of allocated encoded string */
     char n = 0;		    /* next character beyond a \\ */
     char c = 0;		    /* character to decode or third hex character after \u */
-    int xa = 0;		    /* first hex number for \uxxxx (if surrogates) */
-    int xb = 0;		    /* second hex number for \uxxxx (if surrogates) */
+    uint32_t xa = 0;        /* first hex number for \uxxxx (if surrogates) */
+    uint32_t xb = 0;        /* second hex number for \uxxxx (if surrogates) */
     int32_t surrogate = 0;  /* for surrogate pairs */
     int scanned = 0;	    /* for sscanf() */
     size_t i;
@@ -1796,7 +1818,7 @@ json_decode(char const *ptr, size_t len, bool quote, size_t *retlen)
 
 		    warn(__func__, "reached EOF trying to scan for hex bytes");
 		    return NULL;
-		} else if (scanned == 1 || (scanned == 2 && surrogates_to_unicode(xa, xb) < 0)) {
+		} else if (scanned == 1 || (scanned == 2 && surrogates_to_unicode((int32_t)xa, (int32_t)xb) < 0)) {
 		    surrogate = xa;
 		    bytes = utf8len(ptr + i, surrogate);
 		    if (bytes <= 0) {
@@ -1814,7 +1836,7 @@ json_decode(char const *ptr, size_t len, bool quote, size_t *retlen)
 		     * if there is a \uxxxx\uxxxx then we try for a surrogate
 		     * pair.
 		     */
-		    surrogate = surrogates_to_unicode(xa, xb);
+		    surrogate = surrogates_to_unicode((int32_t)xa, (int32_t)xb);
 		    if (surrogate < 0) {
 			if (retlen != NULL) {
 			    *retlen = 0;

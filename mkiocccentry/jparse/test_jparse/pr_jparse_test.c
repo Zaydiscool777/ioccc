@@ -12,9 +12,30 @@
  *
  * "Because even printf has a return value worth paying attention to." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -26,6 +47,9 @@
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
+
+
+
 /* special comments for the seqcexit tool */
 /* exit code out of numerical order - ignore in sequencing - ooo */
 /* exit code change of order - use new value in sequencing - coo */
@@ -35,6 +59,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <locale.h>
+
 #include "../util.h"
 #include "../jparse.h"
 
@@ -57,18 +83,19 @@
 static const char * const usage_msg =
     "usage: %s [-h] [-v level] [-V]\n"
     "\n"
-    "\t-h\t\tPrint help message and exit\n"
-    "\t-v level\tSet verbosity level (def level: %d)\n"
-    "\t-V\t\tPrint version string and exit\n"
+    "\t-h\t\tprint help message and exit\n"
+    "\t-v level\tset verbosity level (def level: %d)\n"
+    "\t-V\t\tprint version strings and exit\n"
     "\n"
     "Exit codes:\n"
     "\t0\t\tall is OK\n"
     "\t1\t\tsome unexpected I/O error was detected\n"
-    "\t2\t\t-h and help string printed or -V and version string printed\n"
+    "\t2\t\t-h and help string printed or -V and version strings printed\n"
     "\t3\t\tcommand line error\n"
     "\t>=10\t\tinternal error\n"
     "\n"
     "%s version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -101,6 +128,11 @@ main(int argc, char *argv[])
     int vprint_test_cnt = 0;	/* error count from vprint_test() */
     int pr_jparse_test_cnt = 0;	/* error count from pr_jparse_test() */
     int i;
+
+    /*
+     * use default locale based on LANG
+     */
+    (void) setlocale(LC_ALL, "");
 
     /*
      * open a write stream to /dev/null
@@ -145,8 +177,9 @@ main(int argc, char *argv[])
 		not_reached();
 	    }
 	    break;
-	case 'V':		/* -V - print version and exit */
+	case 'V':		/* -V - print version strings and exit */
 	    print("pr_jparse_test version %s\n", PR_JPARSE_TEST_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -1056,7 +1089,7 @@ usage(int exitcode, char const *prog, char const *str)
 	fprintf_usage(DO_NOT_EXIT, stderr, "%s\n", str);
     }
     fprintf_usage(exitcode, stderr, usage_msg, prog, DBG_DEFAULT, PR_JPARSE_TEST_BASENAME,
-	    PR_JPARSE_TEST_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+	    PR_JPARSE_TEST_VERSION, JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

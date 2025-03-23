@@ -3,9 +3,30 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -19,7 +40,6 @@
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
-
 /* special comments for the seqcexit tool */
 /* exit code out of numerical order - ignore in sequencing - ooo */
 /* exit code change of order - use new value in sequencing - coo */
@@ -27,6 +47,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <locale.h>
 
 /*
  * jsemtblgen - generate JSON semantics table
@@ -61,7 +82,7 @@ static char *unknown_func = NULL;	/* -U func - validate nodes with unknown types
 /*
  * usage message
  */
-static const char * const usage_msg =
+static const char * const usage_msg0 =
     "usage: %s [-h] [-v level] [-J level] [-q] [-V] [-s] [-I] [-N name] [-D def_func] [-P prefix]\n"
     "\t\t    [-1 func] [-S func] [-B func] [-0 func] [-M func] [-O func] [-A func] [-U func] json_arg\n"
     "\n"
@@ -69,7 +90,7 @@ static const char * const usage_msg =
     "\t-v level\tset verbosity level (def level: %d)\n"
     "\t-J level\tset JSON verbosity level (def level: %d)\n"
     "\t-q\t\tquiet mode: silence msg(), warn(), warnp() if -v 0 (def: loud :-) )\n"
-    "\t-V\t\tprint version string and exit\n"
+    "\t-V\t\tprint version strings and exit\n"
     "\t-s\t\targ is a string (def: arg is a filename)\n"
     "\n"
     "\t-I\t\toutput as .h include file (def: output as .c src)\n"
@@ -83,7 +104,8 @@ static const char * const usage_msg =
     "\t\t\tNOTE: The name is based on the JTYPE_MEMBER JSON decoded name string.\n"
     "\t\t\tNOTE: Underscore (_) replaces any name chars that are not valid in a C function name.\n"
     "\t\t\tNOTE: -P overrides any use of -M.\n"
-    "\n"
+    "\n";
+static const char * const usage_msg1 =
     "\t-1 func\t\tvalidate JTYPE_NUMBER JSON nodes with func() (def: NULL)\n"
     "\t-S func\t\tvalidate JTYPE_STRING JSON nodes with func() (def: NULL)\n"
     "\t-B func\t\tvalidate JTYPE_BOOL JSON nodes with func() (def: NULL)\n"
@@ -98,11 +120,12 @@ static const char * const usage_msg =
     "Exit codes:\n"
     "    0\t\tJSON is valid\n"
     "    1\t\tJSON is invalid\n"
-    "    2\t\t-h and help string printed or -V and version string printed\n"
+    "    2\t\t-h and help string printed or -V and version strings printed\n"
     "    3\t\tcommand line error\n"
     "    >=10\tinternal error\n"
     "\n"
     "jsemtblgen version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -267,6 +290,11 @@ main(int argc, char **argv)
     size_t c;
 
     /*
+     * use default locale based on LANG
+     */
+    (void) setlocale(LC_ALL, "");
+
+    /*
      * parse args
      */
     program = argv[0];
@@ -301,6 +329,7 @@ main(int argc, char **argv)
 	    break;
 	case 'V':		/* -V - print version and exit */
 	    print("%s version: %s\n", JSEMTBLGEN_BASENAME, JSEMTBLGEN_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -1018,7 +1047,7 @@ print_sem_c_src(struct dyn_array *tbl, char *tbl_name, char *cap_tbl_name)
      */
     len = dyn_array_tell(tbl);
     print("struct json_sem %s[%s_LEN+1] = {\n", tbl_name, cap_tbl_name);
-    prstr("/* depth    type        min     max   count   index  name_len validate  name */\n");
+    prstr("/* depth    type        min     max   count   index  name_len validate  name    data */\n");
 
     /*
      * print each semantic table entry
@@ -1164,17 +1193,22 @@ print_sem_c_src(struct dyn_array *tbl, char *tbl_name, char *cap_tbl_name)
 		free(func_name);
 		func_name = NULL;
 	    }
-	    prstr("\" },\n");
+	    prstr("\",");
 	} else {
 	    /* print NULL for no name */
-	    prstr("\tNULL },\n");
+	    prstr("\tNULL,");
 	}
+
+	/*
+	 * print NULL (for data) and end of element
+	 */
+	prstr("\tNULL },\n");
     }
 
     /*
      * print semantic table trailer
      */
-    prstr("  { 0,\tJTYPE_UNSET,\t0,\t0,\t0,\t-1,\t0,\tNULL,\tNULL }\n");
+    prstr("  { 0,\tJTYPE_UNSET,\t0,\t0,\t0,\t-1,\t0,\tNULL,\tNULL,\tNULL }\n");
     prstr("};\n");
 
     return;
@@ -1524,8 +1558,10 @@ usage(int exitcode, char const *prog, char const *str)
     if (*str != '\0') {
 	fprintf_usage(DO_NOT_EXIT, stderr, "%s\n", str);
     }
-    fprintf_usage(exitcode, stderr, usage_msg, prog,
-		  DBG_DEFAULT, json_verbosity_level, JSEMTBLGEN_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+    fprintf_usage(DO_NOT_EXIT, stderr, usage_msg0, prog,
+		  DBG_DEFAULT, json_verbosity_level);
+    fprintf_usage(exitcode, stderr, usage_msg1,
+		  JSEMTBLGEN_VERSION, JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

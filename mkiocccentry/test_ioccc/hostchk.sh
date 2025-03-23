@@ -11,13 +11,33 @@
 #
 #	https://github.com/ioccc-src/mkiocccentry/issues
 #
-# This script was written in 2022 by:
+# Copyright (c) 2022-2025 by Cody Boone Ferguson.  All Rights Reserved.
+#
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
+#
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# CODY BOONE FERGUSON DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT
+# SHALL CODY BOONE FERGUSON BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+# OF THIS SOFTWARE.
+#
+# This tool was written in 2022-2025 by Cody Boone Ferguson:
 #
 #	@xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 #
-# with some improvements and fixes by:
+# with some useful improvements and fixes by:
 #
 #	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
 #
@@ -63,16 +83,16 @@ CC="$(type -P cc 2>/dev/null)"
 if [[ -z $CC ]]; then
     CC="/usr/bin/cc"
 fi
-export HOSTCHK_VERSION="1.0.2 2024-08-28"
-export USAGE="usage: $0 [-h] [-V] [-v level] [-D dbg_level] [-c cc] [-w work_dir] [-f] [-Z topdir]
+export HOSTCHK_VERSION="2.0.1 2025-03-14"
+export USAGE="usage: $0 [-h] [-V] [-v level] [-D dbg_level] [-c cc] [-w workdir] [-f] [-Z topdir]
 
     -h			    Print help and exit
     -V			    Print version and exit
     -v level		    Set verbosity level for this script: (def level: 0)
     -D dbg_level	    Set verbosity level for tests (def: level: 0)
     -c cc		    Path to compiler (def: $CC)
-    -w work_dir		    Use an explicit work directory (def: use a temporary directory)
-				NOTE: The work_dir cannot exist
+    -w workdir		    Use an explicit work directory (def: use a temporary directory)
+				NOTE: The workdir cannot exist
     -f			    Faster check (def: run slower for better diagnostics)
     -Z topdir		    Top level build directory (def: try . or ..)
 
@@ -88,6 +108,25 @@ hostchk.sh version: $HOSTCHK_VERSION"
 
 export EXIT_CODE=0
 export TOPDIR=
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 # parse args
 #
@@ -109,7 +148,7 @@ while getopts :hv:VD:c:w:fZ: flag; do
 	;;
     c)	CC="$OPTARG"
 	;;
-    w)	WORK_DIR="$OPTARG"
+    w)	WORKDIR="$OPTARG"
 	W_FLAG="true"
 	;;
     f)	F_FLAG="true"
@@ -187,17 +226,17 @@ fi
 # setup a working directory unless -w was given
 #
 if [[ -z $W_FLAG ]]; then
-    WORK_DIR=$(mktemp -d .hostchk.XXXXXXXXXX.work)
+    WORKDIR=$(mktemp -d .hostchk.XXXXXXXXXX.work)
     status="$?"
     if [[ $status -ne 0 ]]; then
 	echo "$0: ERROR: mktemp -d .hostchk.work.XXXXXXXXXX exit code: $status" 1>&2
 	exit 10
     fi
-elif [[ -z $WORK_DIR ]]; then
-    echo "$0: ERROR: -w dir was given, but $$WORK_DIR is empty" 1>&2
+elif [[ -z $WORKDIR ]]; then
+    echo "$0: ERROR: -w dir was given, but $$WORKDIR is empty" 1>&2
     exit 11
-elif [[ -e $WORK_DIR ]]; then
-    echo "$0: ERROR: -w $WORK_DIR exists" 1>&2
+elif [[ -e $WORKDIR ]]; then
+    echo "$0: ERROR: -w $WORKDIR exists" 1>&2
     exit 12
 fi
 
@@ -205,7 +244,7 @@ fi
 #
 export INCLUDE_TEST_SUCCESS="true"
 RUN_INCLUDE_TEST="true"
-PROG_FILE=$(mktemp -u "$WORK_DIR/hostchk.XXXXXXXXXX.prog")
+PROG_FILE=$(mktemp -u "$WORKDIR/hostchk.XXXXXXXXXX.prog")
 status="$?"
 if [[ $status -ne 0 ]]; then
     EXIT_CODE=13	# will exit 13 at the end unless EXIT_CODE is changed later on
@@ -215,7 +254,7 @@ fi
 
 # trap to remove prog and also work directory
 #
-trap "rm -rf \$WORK_DIR; exit" 1 2 3 15
+trap "rm -rf \$WORKDIR; exit" 1 2 3 15
 
 # Previously, -f was so fast it did absolutely nothing! :-)
 #
@@ -388,7 +427,7 @@ compile_test()
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should print the value of ENOENT" 1>&2
 fi
-cat <<EOF >"$WORK_DIR/pre-errno.c"
+cat <<EOF >"$WORKDIR/pre-errno.c"
 #include <errno.h>
 #include <stdio.h>
 int
@@ -399,8 +438,8 @@ main(void)
     return 0;
 }
 EOF
-WORK_FILE="$WORK_DIR/pre-errno"
-if compile_test 21 "$WORK_DIR/pre-errno.c" "$WORK_FILE"; then	# compile failure will exit 21 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/pre-errno"
+if compile_test 21 "$WORKDIR/pre-errno.c" "$WORK_FILE"; then	# compile failure will exit 21 unless EXIT_CODE is changed
     ENOENT=$("$WORK_FILE")
     if [[ $V_FLAG -gt 1 ]]; then
 	echo "$0: got: ENOENT == $ENOENT" 1>&2
@@ -416,7 +455,7 @@ fi
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should print: errno: $ENOENT" 1>&2
 fi
-cat <<EOF >"$WORK_DIR/errno0.c"
+cat <<EOF >"$WORKDIR/errno0.c"
 #include <errno.h>
 #include <stdio.h>
 int
@@ -428,8 +467,8 @@ main(void)
     return 0;
 }
 EOF
-WORK_FILE="$WORK_DIR/errno0"
-if compile_test 22 "$WORK_DIR/errno0.c" "$WORK_FILE"; then	# compile failure will exit 22 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/errno0"
+if compile_test 22 "$WORKDIR/errno0.c" "$WORK_FILE"; then	# compile failure will exit 22 unless EXIT_CODE is changed
     if ! "$WORK_FILE" | grep -q "errno: $ENOENT"; then
 	EXIT_CODE=23	# will exit 23 at the end unless EXIT_CODE is changed later on
 	echo "$0: ERROR: inconsistent ENOENT value: did not get: \"errno: $ENOENT\": new exit code: $EXIT_CODE" 1>&2
@@ -444,7 +483,7 @@ fi
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should verify errno == $ENOENT, returning 1" 1>&2
 fi
-cat<<EOF >"$WORK_DIR/errno1.c"
+cat<<EOF >"$WORKDIR/errno1.c"
 #include <errno.h>
 int
 main(void)
@@ -454,8 +493,8 @@ main(void)
     return errno == ENOENT;
 }
 EOF
-WORK_FILE="$WORK_DIR/errno1"
-if compile_test 24 "$WORK_DIR/errno1.c" "$WORK_FILE"; then	# compile failure will exit 24 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/errno1"
+if compile_test 24 "$WORKDIR/errno1.c" "$WORK_FILE"; then	# compile failure will exit 24 unless EXIT_CODE is changed
     "$WORK_FILE"
     status=$?
     if [[ $status -ne 1 ]] ; then
@@ -471,7 +510,7 @@ fi
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should print: "Hello, world"" 1>&2
 fi
-cat <<EOF >"$WORK_DIR/hello.c"
+cat <<EOF >"$WORKDIR/hello.c"
 #include <stdio.h>
 int
 main(void)
@@ -480,8 +519,8 @@ main(void)
     return 0;
 }
 EOF
-WORK_FILE="$WORK_DIR/hello"
-if compile_test 26 "$WORK_DIR/hello.c" "$WORK_FILE"; then	# compile failure will exit 26 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/hello"
+if compile_test 26 "$WORKDIR/hello.c" "$WORK_FILE"; then	# compile failure will exit 26 unless EXIT_CODE is changed
     if ! "$WORK_FILE" | grep -q "Hello, world"; then
 	EXIT_CODE=27	# will exit 27 at the end unless EXIT_CODE is changed later on
 	echo "$0: ERROR: expected string "Hello, world" not found: new exit code: $EXIT_CODE" 1>&2
@@ -495,15 +534,15 @@ fi
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should simply return 0" 1>&2
 fi
-cat <<EOF >"$WORK_DIR/main0.c"
+cat <<EOF >"$WORKDIR/main0.c"
 int
 main(void)
 {
     return 0;
 }
 EOF
-WORK_FILE="$WORK_DIR/main0"
-if compile_test 28 "$WORK_DIR/main0.c" "$WORK_FILE"; then	# compile failure will exit 28 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/main0"
+if compile_test 28 "$WORKDIR/main0.c" "$WORK_FILE"; then	# compile failure will exit 28 unless EXIT_CODE is changed
     if ! "$WORK_FILE"; then
 	status=$?
 	EXIT_CODE=29	# will exit 29 at the end unless EXIT_CODE is changed later on
@@ -519,15 +558,15 @@ fi
 if [[ $V_FLAG -gt 1 ]]; then
     echo "$0: creating binary that should simply return 1" 1>&2
 fi
-cat <<EOF >"$WORK_DIR/main1.c"
+cat <<EOF >"$WORKDIR/main1.c"
 int
 main(void)
 {
     return 1;
 }
 EOF
-WORK_FILE="$WORK_DIR/main1"
-if compile_test 30 "$WORK_DIR/main1.c" "$WORK_FILE"; then	# compile failure will exit 30 unless EXIT_CODE is changed
+WORK_FILE="$WORKDIR/main1"
+if compile_test 30 "$WORKDIR/main1.c" "$WORK_FILE"; then	# compile failure will exit 30 unless EXIT_CODE is changed
     if "$WORK_FILE"; then
 	status=$?
 	EXIT_CODE=31	# will exit 31 at the end unless EXIT_CODE is changed later on
@@ -539,7 +578,7 @@ fi
 
 # remove work directory
 #
-rm -rf "$WORK_DIR"
+rm -rf "$WORKDIR"
 
 # All Done!!! All Done!!! -- Jessica Noll, Age 2
 #

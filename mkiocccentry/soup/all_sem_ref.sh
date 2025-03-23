@@ -6,16 +6,16 @@
 # and .auth.json files, form *.json.c and *.json.h semantic table files
 # under a given directory.
 #
-# The concept of this file was developed by:
-#
-#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
-#
 # The JSON parser and this tool were co-developed in 2022 by:
 #
 #	@xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 # and:
+#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+#
+# The concept of this file was developed by:
+#
 #	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
 #
 # Share and enjoy! :-)
@@ -27,7 +27,7 @@
 export V_FLAG="0"
 export JSEMTBLGEN="../jparse/jsemtblgen"
 export JSEMCGEN_SH="../jparse/jsemcgen.sh"
-export ALL_SEM_REF_VERSION="1.2 2023-02-04"
+export ALL_SEM_REF_VERSION="1.2.1 2023-03-14"
 
 export USAGE="usage: $0 [-h] [-v level] [-V] [-j jsemtblgen] [-J jsemcgen.sh] info.head.c info.tail.c info.head.h
 	info.tail.h auth.head.c auth.tail.c auth.head.h auth.tail.h info_dir auth_dir ref_dir
@@ -64,6 +64,25 @@ Exit codes:
  >= 10	    internal error
 
 all_sem_ref.sh version: $ALL_SEM_REF_VERSION"
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 # parse args
 #

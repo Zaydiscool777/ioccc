@@ -1,13 +1,35 @@
 /*
- * txzchk - IOCCC tarball validation tool
+ * txzchk - IOCCC submission tarball validation tool
  *
- * txzchk verifies that the tarball does not have any feathers stuck in it (i.e.
- * the tarball conforms to the IOCCC tarball rules). Invoked by mkiocccentry;
- * txzchk in turn uses fnamchk to make sure that the tarball was correctly named
- * and formed. In other words txzchk makes sure that the mkiocccentry tool was
- * used and there was no screwing around with the resultant tarball.
+ * txzchk verifies that IOCCC submission tarballs conform to the IOCCC rules (no
+ * feathers stuck in the tarballs :-) ).
  *
- * Written in 2022 by:
+ * txzchk is invoked by mkiocccentry; txzchk in turn uses fnamchk to make
+ * sure that the tarball was correctly named and formed. In other words txzchk
+ * makes sure that the mkiocccentry tool was used and there was no screwing
+ * around with the resultant tarball.
+ *
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson.  All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * CODY BOONE FERGUSON DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT
+ * SHALL CODY BOONE FERGUSON BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THIS SOFTWARE.
+ *
+ * This tool was written in 2022-2025 by Cody Boone Ferguson:
  *
  *	@xexyl
  *	https://xexyl.net		Cody Boone Ferguson
@@ -33,6 +55,10 @@
  *	nevertheless none were harmed. :-) More importantly, no tar pits -
  *	including the La Brea Tar Pits - were disturbed in the making of this
  *	tool. :-)
+ *
+ * Share and enjoy! :-)
+ *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+
  */
 
 
@@ -114,12 +140,20 @@ struct tarball
     uintmax_t negative_files_size;	    /* > 0 ==> number of times the total files reached < 0 */
     uintmax_t files_size_too_big;	    /* > 0 ==> total number of times files size sum > MAX_SUM_FILELEN */
     uintmax_t files_size_shrunk;	    /* > 0 ==> total files size shrunk this many times */
-    uintmax_t correct_directory;	    /* number of files in the correct directory */
+    uintmax_t correct_directories;	    /* number of files in the correct directory */
     uintmax_t invalid_dot_files;	    /* number of dot files that aren't .auth.json and .info.json */
     uintmax_t named_dot;		    /* number of files called just '.' */
     uintmax_t total_files;		    /* total files in the tarball */
-    uintmax_t abnormal_files;		    /* total number of abnormal files in tarball (i.e. not regular files) */
-    uintmax_t invalid_filenames;	    /* total number of invalid filenames in tarball */
+    uintmax_t extra_filenames;              /* total number of extra files */
+    uintmax_t required_filenames;           /* total number of required files */
+    uintmax_t optional_filenames;           /* total number of optional files */
+    uintmax_t forbidden_filenames;          /* total number of forbidden files */
+    uintmax_t directories;                  /* total number of subdirectories counting the required top level directory */
+    uintmax_t invalid_perms;                /* total number of files with invalid permissions */
+    uintmax_t total_exec_files;             /* total number of executable FILES */
+    uintmax_t invalid_dirnames;             /* number of invalid directory names */
+    uintmax_t invalid_directories;          /* invalid directory */
+    uintmax_t depth_errors;                 /* number of directories > max depth */
     uintmax_t total_feathers;		    /* number of total feathers stuck in tarball (i.e. issues found) */
 };
 
@@ -140,9 +174,13 @@ struct txz_file
 {
     char *basename;			    /* basename of _this_ file */
     char *filename;			    /* full path of _this_ file */
+    char *top_dirname;                      /* top directory name of _this_ file (i.e. up to first '/') */
     uintmax_t count;			    /* number of times _this_ file has been seen */
-    bool is_file;			    /* true ==> is normal file (count size and number of files) */
+    bool isfile;			    /* true ==> is normal file (count size and number of files) */
     intmax_t length;			    /* size as determined by string_to_intmax2() */
+    bool isdir;                             /* true ==> is a directory */
+    char *perms;                            /* permission bits */
+    bool isexec;                            /* true ==> executable (+x) file */
     struct txz_file *next;		    /* the next file in the txz_files list */
 };
 
@@ -169,25 +207,28 @@ struct txz_line
  * function prototypes
  */
 static void txzchk_sanity_chks(char const *tar, char const *fnamchk);
-static void parse_txz_line(char *linep, char *line_dup, char const *dir_name, char const *tarball_path, int *dir_count,
-			   intmax_t *sum, intmax_t *count);
-static void parse_linux_txz_line(char *p, char *line, char *line_dup, char const *dir_name,
-	char const *tarball_path, char **saveptr, bool normal_file, intmax_t *sum, intmax_t *count);
-static void parse_bsd_txz_line(char *p, char *line, char *line_dup, char const *dir_name, char const *tarball_path,
-	char **saveptr, bool normal_file, intmax_t *sum, intmax_t *count);
+static void parse_txz_line(char *linep, char *line_dup, char const *dirname, char const *tarball_path, intmax_t *sum,
+        intmax_t *count);
+static void parse_linux_txz_line(char *p, char *line, char *line_dup, char const *dirname,
+	char const *tarball_path, char **saveptr, bool normal_file, intmax_t *sum, intmax_t *count, bool isdir,
+        char *perms, bool isexec);
+static void parse_bsd_txz_line(char *p, char *line, char *line_dup, char const *dirname, char const *tarball_path,
+	char **saveptr, bool normal_file, intmax_t *sum, intmax_t *count, bool isdir, char *perms, bool isexec);
 static uintmax_t check_tarball(char const *tar, char const *fnamchk);
 static void show_tarball_info(char const *tarball_path);
 static void check_file_size(char const *tarball_path, off_t size, struct txz_file *file);
 static void count_and_sum(char const *tarball_path, intmax_t *sum, intmax_t *count, intmax_t length);
-static void check_txz_file(char const *tarball_path, char const *dir_name, struct txz_file *file);
-static void check_all_txz_files(char const *dir_name);
-static void check_directories(struct txz_file *file, char const *dir_name, char const *tarball_path);
-static bool has_special_bits(char const *str);
+static void check_txz_file(char const *tarball_path, char const *dirname, struct txz_file *file);
+static void check_all_txz_files(void);
+static void check_directory(struct txz_file *file, char const *dirname, char const *tarball_path);
+static bool has_special_bits(struct txz_file *file);
 static void add_txz_line(char const *str, uintmax_t line_num);
-static void parse_all_txz_lines(char const *dir_name, char const *tarball_path);
+static void parse_all_txz_lines(char const *dirname, char const *tarball_path);
 static void free_txz_lines(void);
-static struct txz_file *alloc_txz_file(char const *path, intmax_t length);
+static struct txz_file *alloc_txz_file(char const *path, char const *dirname, char *perms, bool isdir,
+        bool isfile, bool isexec, intmax_t length);
 static void add_txz_file_to_list(struct txz_file *file);
+static void free_txz_file(struct txz_file **file);
 static void free_txz_files_list(void);
 
 

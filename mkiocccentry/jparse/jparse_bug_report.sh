@@ -44,22 +44,21 @@
 #
 # Maintain this list towards the top of file, in sorted order.
 #
-# Do NOT put this tool (jparse_bug_report.sh) in the list, it will
-# cause an infinite loop.
-#
+
 export TOOLS="
-    jparse
-    jsemcgen.sh
-    jsemtblgen
-    jstrencode
-    jstrdecode
-    run_bison.sh
-    run_flex.sh
-    test_jparse/jnum_chk
-    test_jparse/jnum_gen
-    test_jparse/jparse_test.sh
-    test_jparse/jstr_test.sh
-    verge
+    ./jparse
+    ./jparse_bug_report.sh
+    ./jsemcgen.sh
+    ./jsemtblgen
+    ./jstrencode
+    ./jstrdecode
+    ./run_bison.sh
+    ./run_flex.sh
+    ./test_jparse/jnum_chk
+    ./test_jparse/jnum_gen
+    ./test_jparse/jparse_test.sh
+    ./test_jparse/jstr_test.sh
+    ./verge
     "
 
 # we need this to find overriding Makefile.local in all directories to see if
@@ -80,7 +79,7 @@ if [[ -z "$MAKE" ]]; then
 fi
 export MAKE
 export MAKE_FLAGS="V=@ S=@ Q= E=@ I= Q_V_OPTION=1 INSTALL_V= MAKE_CD_Q="
-export BUG_REPORT_VERSION="2.0.4 2024-12-31"
+export BUG_REPORT_VERSION="2.1.0 2025-02-28"
 export FAILURE_SUMMARY=
 export NOTICE_SUMMARY=
 export DBG_LEVEL="0"

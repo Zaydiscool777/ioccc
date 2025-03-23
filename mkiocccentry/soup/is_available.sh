@@ -12,15 +12,34 @@
 #
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
-# "Because even the hard working helpers sometime need a helping hand." :-)
+# "Because even the hard working helpers sometimes need a helping hand." :-)
 #
 # Share and enjoy! :-)
 
-export VERSION="1.1.1 2024-10-01"
+export VERSION="1.1.2 2025-03-14"
 NAME=$(basename "$0")
 export NAME
 export PRINT_WHERE=""
 export V_FLAG="0"
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 export USAGE="usage: $0 [-h] [-V] [-v level] [-w] tool
 

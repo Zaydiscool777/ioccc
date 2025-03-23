@@ -1,6 +1,1718 @@
 # Major changes to the IOCCC entry toolkit
 
 
+## Release 2.4.4 2025-03-15
+
+**IMPORTANT NOTE**:
+
+While you are **NOT** required to use this release in order to submit to **IOCCC28**,
+we do **RECOMMEND** that you use and install this release of the mkiocccentry toolkit.
+
+**BACKWARD COMPATIBILITY**:
+
+This release is backward compatible with both "_Release 2.4.2 2025-03-02_".
+This release is backward compatible with both "_Release 2.4.3 2025-03-11_".
+
+Submissions made under "_Release 2.4.2 2025-03-02_" remain valid for **IOCCC28**.
+Submissions made under "_Release 2.4.3 2025-03-11_" remain valid for **IOCCC28**.
+
+**RELEASE DETAILS FOLLOW**:
+
+Set locale to C, the **official** locale of the IOCCC.
+
+See the "programmer's apology" of the `set_ioccc_locale()` function in `soup/location_util.c`
+for more details.
+
+Updated `MKIOCCCENTRY_VERSION` to "2.0.3 2025-03-14".
+Updated `FNAMCHK_VERSION` to "2.0.1 2025-03-14".
+Maintain `MIN_FNAMCHK_VERSION` as "2.0.0 2025-02-28".
+Updated `TXZCHK_VERSION` to "2.0.3 2025-03-14"
+Updated `CHKENTRY_VERSION` to "2.0.3 2025-03-14".
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/`. This
+updates the `jparse(3)` man page with additional functions (with two new
+files added), adds to all the tools (early on `main()` - no libraries)
+`setlocale(LC_ALL, "");` to use the system's default locale based on
+`$LANG`. Additionally a macro and variable were renamed to better reflect
+what they are (this does not affect any code in mkiocccentry toolkit however).
+
+
+## Release 2.4.3 2025-03-11
+
+**IMPORTANT NOTE**:
+
+While you are **NOT** required to use this release in order to submit to **IOCCC28**,
+we do **RECOMMEND** that you use and install this release of the mkiocccentry toolkit.
+
+**BACKWARD COMPATIBILITY**:
+
+This release is backward compatible with "_Release 2.4.2 2025-03-02_".
+Submissions made under "_Release 2.4.2 2025-03-02_" remain valid for **IOCCC28**.
+
+**RELEASE DETAILS FOLLOW**:
+
+Fix search of tools under `$PATH`.
+
+Fix bugs in `resolve_path()` where even if one had `./` or `/` in front of the
+path it could end up resolving a path that is not a regular executable file
+(when it did not have a `/` in the path this did not happen). Another bug was
+fixed where if `$PATH` is NULL or empty and the path is not a regular executable
+file it still would be a strdup()d copy of the original path.
+
+The above solved a problem where we could get the tools to be found (if they
+exist) if we also did a check for `is_file()` and `is_exec()` but with the above
+fixes we only have to check for `!= NULL`.
+
+The `find_utils()` functions now takes a corresponding `bool *` for each tool to
+find. If the boolean is not NULL then we search for that tool. If it is NULL and
+the `char **` is not NULL then we set the `*tool` to NULL. This way the caller
+can, if they wish and they are careful, decide whether or not to find all the
+tools. For example `txzchk` only looks for `tar` if test mode is not enabled.
+And although as a safety check before free()ing the pointer we do check that
+test mode was not used we do not technically need it as long as we pass in
+`&tar` (although we do give NULL so we do need to check it).
+
+Sync copyright fixes from jparse.
+
+Force set `nul_warning` to false in `mkiocccentry(1)` and disable checking of
+it in `chkentry(1)`. Post IOCCC28 it will be removed from struct info, the
+.info.json files and chkentry(1) that checks it.
+
+Rather than directly put in `true` in the writing of the .info.json file, force
+set `first_rule_is_all` to `true` in `mkiocccentry(1)` and reference that
+boolean in the writing of the .info.json file.
+
+Changed `MIN_MKIOCCCENTRY_VERSION` to `"2.0.1 2025-03-02"`
+Updated `MKIOCCCENTRY_VERSION` to `"2.0.2 2025-03-11"`.
+Changed `MIN_TXZCHK_VERSION` to `"2.0.1 2025-03-02"`.
+Updated `TXZCHK_VERSION` to `"2.0.2 2025-03-11"`.
+Changed `MIN_CHKENTRY_VERSION` to `"2.0.1 2025-03-02"`.
+Updated `CHKENTRY_VERSION` to `"2.0.2 2025-03-11"`.
+
+Resolve issue #1229.  Add `-U UUID` to `mkiocccentry(1)` to set the username.
+
+Also fixed an error with `-u uuidfile` where it would not set the `test` boolean
+to true if the UUID was `"true"`.
+
+The `-u uuidfile` and `-U UUID` options may not be used with `-i answers`,
+`-d`, nor `-s seed`.
+
+Partial fix to issue #1208. The `-x` option to force delete the
+submission directory and `-r rm` option to set path to `rm(1)` were added to
+`mkiocccentry(1)` as part of issue #1208. The part of issue #1208 that was **NOT**
+done was moved into issue #1235: and that will be completed later for **IOCCC29**.
+
+Fixed bug where `overwrite_answers` was always true by default in `mkiocccentry(1)`.
+
+Updated man page for the above changes.
+
+Resolved issues #1233 and #1218. Both `mkiocccentry(1)` and `txzchk(1)` (the only ones
+that use other tools) now search `$PATH` for the tools first by way of the
+`find_utils()` function (modified a fair bit) and a new util function in jparse
+called `resolve_path()`. The jparse util functions `shell_cmd()` and
+`pipe_open()` were also improved to resolve paths if no `/` is in the command
+name. As for `make`: we now search for `gmake` first as the Makefiles we need
+are GNU Makefiles.
+
+Add missing `-r` to `rm` in `mkiocccentry_test.sh`.
+
+Resolve issue #1206. Some people wanted this option to submit multiple
+submissions without having to repeatedly copy/paste their username UUID. Now they
+can just put the UUID in a text file and use `-u uuid`. If the file is not a regular
+readable file or it does not have a valid UUID it'll prompt like before. If the
+`-i answers` flag is used it is not relevant.
+
+Resolve issue #1210. The directory/file lists to be ignored prompting was
+confusing to some people. The question of 'Is this OK?' was reworded to 'Do you
+wish to continue?' and the explanation is hopefully a bit clearer too.
+
+Resolve issue #1221. Removed the check for first rule is all (in Makefiles).
+This allows one to also have earlier on the format of `CC:= cc` rather than just
+`CC= cc`, should they wish. The `.info.json` file still has this bool but it's
+always set to true and chkentry will ignore it. **AFTER IOCCC28** it will be
+removed from `.info.json` and `chkentry(1)` code will no longer have the functions
+involved.
+
+Resolve issue #1209. Although not labelled 'top priority' it was already done in
+the code. If `topdir` is the same as `workdir` it is an error. If `workdir` is under
+`topdir` it is an error. If `topdir` is somehow slipped into the submission
+directory it is an error. If `workdir` is encountered in `topdir` we skip it with
+`fts_set()` so as to not descend into it. Also, we now check that the
+directories are directories an are the right permissions, prior to even trying
+to scan/copy files/directories (to show a better error message).
+
+Resolve issue #1214. With guidance from @SirWumpus and Landon, and at their
+request, the iocccsize tool no longer warns against wordbuf warning unless
+verbosity is high enough; in `mkiocccentry(1)` it sets the boolean to true or false
+depending on the result but it only notes it as a fun fact, suggesting the user
+note it in their remarks. Post **IOCCC28** the bool will be removed from .info.json
+and `chkentry(1)` functions for it will be removed. For now the function that
+checks this value in `chkentry(1)` simply returns true. Additionally, the wrong
+variable was being referenced in `soup/rule_count.c` - it was referencing
+`counts.wordbuf_warning` when it should have been referencing
+`counts.ungetc_error`. Also, because rule 13 no longer restricts UTF the char
+warning is only shown if verbose enough. This did not need to be updated in
+mkiocccentry as it's only referenced `#ifdef ASCII_ONLY` and before that check
+is in `soup/rule_count.c` the code does `#undef ASCII_ONLY` (and it's not even
+referenced in mkiocccentry.c).
+
+Resolve issue #1215.
+
+Now the version checks for `chkentry(1)` are a >= check. Uses code from
+`jparse/verge.c`. Its `main()` was moved to `verge_main.c` and `verge.c` now has
+a new function `vercmp()`. `verge.o` is linked into the library and `chkentry`
+now uses it. Also there are new arrays that we called 'poisoned versions' and
+this allows for bad versions to be excluded. Each tool and some other versions
+have a minimum version allowed which at this time is equivalent to the current
+release. If a version is incremented then the minimum version would be changed
+to be the version at the time the contest opens. In this way uploaded
+submissions will not be invalidated. As for poisoned versions the lists are
+currently empty (just NULL terminated - must be last element).
+
+Updated `test_ioccc/gen_test_JSON.sh` to have a new function -
+`get_version`. This was necessary so we can use `grep -v MIN_`. If it was in the
+same function it would cause another `MIN_` macro to be excluded from
+`limit_ioccc.h` which was a problem. Updated the script's version to
+`"1.0.2 2025-03-07"`.
+
+
+## Release 2.4.2 2025-03-02
+
+Resolve issue #1201.
+
+Fix a number of bugs in `chkentry(1)` and add new option to ignore permissions
+of files and directories (`-P`). This option is only meant for the judges and
+just like with `-i` and `-w` using it when verifying a submission puts one at
+grave risk of violating the rules; it is not even documented outside the usage
+message and the man page.
+
+Fix display issues in `mkiocccentry(1)` and `chkentry(1)` with regards to file
+permissions.
+
+The above fixes required updates to the jparse utility functions so the [jparse
+repo](https://github.com/xexyl/jparse/) was synced to `jparse/`.
+
+Fix `chdir(2)` error in `chkentry(1)` in some places (it did not restore the
+directory after a call to `find_paths()`).
+
+Add missing calls to `errp()` in `txzchk`.  This might be important in some
+cases as we're now at the point of the next contest. The calls are specific to
+the functions `popen(3)` in `pipe_open()` and `system(3)` in `shell_cmd()`. In
+linux in some cases popen() will set errno; in macOS it is unreliable. For
+`system(3)` it appears that errno is not set so `warnp()`/`errp()` were changed
+to the non-errno versions.
+
+Updated `SOUP_VERSION` to `"2.0.1 2025-03-02"`.
+Updated `MKIOCCCENTRY_VERSION` to `"2.0.1 2025-03-02"`.
+Updated `CHKENTRY_VERSION` to `"2.0.1 2025-03-02"`.
+Updated `TXZCHK_VERSION` to `"2.0.1 2025-03-02"`.
+
+
+## Release 2.4.1 2025-03-01
+
+Fix critical bug in jparse/ `copyfile()` function.
+
+
+## Release 2.4.0 2025-02-28
+
+Fix and improve warning of `-y` and `-Y` in `mkiocccentry`.
+
+The code did not explicitly check for `-Y`; it just used the implicit `-y` from
+`-Y`. That is fixed and now if not `-q` show a simple summary but always show
+the longer warning to be sure that they know. As for `-Y` it really ought to be
+used only for the test script but even `-y` should be used with **EXTREME**
+caution.
+
+Add extra sanity checks in `check_submission_dir()`: it now checks towards the
+beginning if the required files exist (that is, the three user submitted files,
+not the JSON file as those don't exist yet, though it does check that they do
+not exist as dot files here would be an error) and are readable and if they are
+not size 0 (for Makefile and remarks.md - prog.c may be empty).
+
+Updated some literal strings of the three required filenames (as above) to their
+macros in both mkiocccentry and txzchk.
+
+Fixes in `chkentry` with checking if files exist or do not exist (depending on
+options) and also add checks for file sizes for certain files, namely Makefile,
+remarks.md (in non-winning mode) as well as index.html (in winning mode) and
+README.md (in winning mode).
+
+Error messages were improved in `chkentry` as well though there are some places
+(the manifest check) where they could be improved (this would require lower
+level changes that we do not have time for before the freeze later today).
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new util
+function (that uses its `file_size()` function) `is_empty()`. This is used in
+the update to `chkentry`.
+
+Added copyright message to jparse files (at the request of Landon some while
+back).
+
+More work on the `chkentry_test.sh` script. The script is in better shape so
+that when the directories are generated (they cannot be static due to version
+changes - at least without a new option) the script should hopefully be easily
+updated (though it depends maybe on how the new directories are generated).
+
+Resequence exit codes in `jparse/util.c`.
+
+Updated versions of `jparse` by changing `x.y.z` to `x.y+1.0` except that for
+those under < `2.0.0` they have been changed to `2.0.0`.
+
+`chkentry` now looks for directories that are the wrong permissions as well as
+directories with a depth beyond the max as well as any type of file other than a
+regular file or directory.
+
+Bug fix an enum in jparse which caused a util function (used in the above fix to
+chkentry) to fail.
+
+Updated `SOUP_VERSION "2.0.0 2025-02-28"`.
+Updated `MKIOCCCENTRY_VERSION` to `"2.0.0 2025-02-28"`.
+Updated `FNAMCHK_VERSION` to `"2.0.0 2025-02-28"`.
+Updated `TXZCHK_VERSION` to `"2.0.0 2025-02-28"`.
+Updated `CHKENTRY_VERSION` to `"2.0.0 2025-02-28"`.
+Updated the version of `test_ioccc/chkentry_test.sh`, `test_ioccc/hostchk.sh`,
+`test_ioccc/ioccc_test.sh`, `test_ioccc/mkiocccentry_test.sh`,
+`test_ioccc/prep.sh` and `test_ioccc/txzchk_test.sh` to `"2.0.0 2025-02-28"`.
+
+
+## Release 2.3.44 2025-02-27
+
+Prepare for code freeze (28 February 2025) with some final changes, some
+important (and useful) and some not that important (but done to be complete).
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` before code
+freeze (28 February 2025).
+
+Updated copyright messages, some missing, some updated (based on brief
+discussions a while back and more recently, recent updates to code and perhaps
+other things) to many files.
+
+The script `bug_report.sh` actually can have the script in the TOOLS variable as
+it will not actually cause an infinite loop as it only gets the version of the
+tool - which is quite useful to know that the user is using the most recent
+version of the script. This was also done in `jparse/` but that doesn't matter
+here; it's only mentioned due to the sync.
+
+Enhance `mkiocccentry` prompting with `-i answers` used. Instead of always
+answering yes even when an issue is found, unless the new option `-Y` is used,
+give the user a chance to confirm things are okay (in particular, it allows one
+to answer no to a question; it does not prompt you for everything as that would
+defeat the purpose of the answers file). The use of `-Y` is highly discouraged
+unless you are **certain** you're good to go and it is mostly used for
+`mkiocccentry_test.sh` which needs to be non-interactive.
+
+Improve usage string about `workdir` and `topdir` to make certain things a bit
+clearer.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.35 2025-02-27"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to` "1.0.15 2025-02-26"`.
+
+
+## Release 2.3.44 2025-02-26
+
+Remove unused arg in `write_json_files()`.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.34 2025-02-26"`.
+
+
+## Release 2.3.43 2025-02-25
+
+Improve `mkiocccentry_test.sh` - add only required files test.
+
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.14 2025-02-25"`.
+
+Plug a loophole in `chkentry(1)` and make it do even more tests that were
+missing/not previously thought of.
+
+Updated `CHKENTRY_VERSION` to `"1.1.5 2025-02-25"`.
+
+
+## Release 2.3.42 2025-02-24
+
+Disable `-g3` in Makefile as use of `-O` option (besides level 0) makes
+debugging much harder so one should not typically use both. This was done in
+`dbg` and `dyn_array` (and opened a pull request in both repos) too; I did
+`jparse/` (in the repo) a while back for the same reason as cited here.
+
+Fun facts: the repo version is: `"2.3.42 2025-02-24"` and so the last two digits
+of the version number itself and the last two digits of the date in the version
+are opposites (and thus anagrams) for [42, the Ultimate Answer to/of Life, the
+Universe and Everything](https://hitchhikers.fandom.com/wiki/42); but no matter
+how absurd it is, and no matter how obvious it was a joke and no matter how much
+[Douglas Adams explicitly said it was a
+joke](https://groups.google.com/g/alt.fan.douglas-adams/c/595nPukE-Jo/m/koaAJ3tPBtEJ?pli=1),
+people still think it's serious and people still have stated it is real and some
+[astronomers even spent years studying
+it](https://www.the-independent.com/news/yes-the-answer-to-the-universe-really-is-42-1351201.html)
+only to claim that it **really is** 42! That means that the **real**
+[Vogons](https://hitchhikers.fandom.com/wiki/Vogon) are
+[humans](https://en.wikipedia.org/wiki/Human), at least until that [hyperspace
+bypass](https://hitchhikers.fandom.com/wiki/Bypass) is formed. :-)
+
+BTW: Landon told me that: at Google Headquarters (previously SGI) at building 42
+there is a very hidden copy of The Hitchhiker's Guide to the Galaxy (H2G2) with
+drawings and other things that Douglas Adams requested Landon taunt them
+[Google] to find and he's had a lot of joy in doing so since very few have been
+able to find it (and Landon is one of the very few who know about it).
+
+Okay so there's some fun totally unrelated to the changes but it's fun so why
+not? :-)
+
+Fix bug in `mkiocccentry` where a submission topdir which only had the three
+required files would abort with an error (due to list being not NULL but empty
+due to a typo).
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for some
+upcoming fixes to `chkentry` (I thought of a loophole in a new option that was
+being finalised and more was discovered after this).
+
+`chkentry` has had a partial fix but more needs to be done (for the loophole I
+thought of with the `-w` option). Unfortunately the other things took more time
+than I hoped and I cannot get it in today - and fixes and improvements to the
+FTS functions requires a minor update to chkentry (both in `chkentry.c` and
+`soup/entry_util.c`)  minor change or else it will not compile and also will
+likely segfault.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.33 2025-02-24"`.
+Updated `CHKENTRY_VERSION` to `"1.1.4 2025-02-24"`.
+
+**NOTE**: the `MKIOCCCENTRY_VERSION` in this commit was by accident `"1.2.33
+2025-02-34"` but we have retroactively fixed it. Thus if you check out this
+specific commit you would see that the version is a mismatch here.
+
+
+## Release 2.3.41 2025-02-23
+
+Much work on issue #1152 done.
+
+Both `-w` and `-i` have been implemented. The man page has not been updated as
+the error codes need to be reconsidered now that the tool does more checks.
+Depending on the `-i path` or `-w` (or both) options different checks are now
+performed, not just semantics tests (indeed one can actually skip the JSON tests
+entirely by `-i info -i auth` but other things are still done). The
+`mkiocccentry` tool will not use either option which is the strictest mode.
+Besides error codes needing to be reviewed and the man page (and if necessary
+other documentation) being updated, unless something was missed the only thing
+left to do is to fix the test script to work with the one arg only model.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for some
+updates that were necessary for the above to be implemented.
+
+Fixed `mkiocccentry` to check for executable filenames by the function, not by
+the filenames themselves.
+
+Added the files `soup/chk_sem_auth.c` and `soup/chk_sem_info.c` to the less
+picky variable in `soup/Makefile` as the lines are quite long now, due to the
+fact that another arg had to be given to the callback functions for the manifest
+checks update.
+
+
+## Release 2.3.40 2025-02-22
+
+Significantly simplify and refactor the FTS functions in jparse/util.c. A great
+deal of thought and effort was put into this and when the `topdir` is passed to
+`chk_manifest()` (which is being worked on) it will be far easier. The benefit
+of these changes, besides being much cleaner, simpler and it being modularised,
+is that if some issue is discovered or some new feature is needed (as has
+already happened numerous times) function calls do not have to be updated.
+
+`mkiocccentry` has been updated to use the simplified interface as well.
+
+A note: `jparse/` has not been fully synced because of a change in `json_sem`
+for `chkentry` that is not yet complete (this was done prior to deciding to
+rework the FTS functions). So the CHANGES.md file and the `json_sem.[ch]` files
+committed to the jparse repo are not yet here.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.31 2025-02-22"`
+
+
+## Release 2.3.39 2025-02-21
+
+Fix many debug calls in `soup/entry_util.c` at level medium to not reveal
+information about the submission. This includes GitHub handle and country code,
+amongst others.
+
+Due to what will be needed with chkentry (and also in mkiocccentry - which has
+been updated) some of the jparse util functions were updated and new ones were
+added. It cannot always be assumed that finding files should be done in a
+case-insensitive manner so there is a new boolean in those functions (and in one
+or two of the new functions). The `mkiocccentry` had a function that is based on
+one of them (`array_has_path()`).
+
+The arrays in the info struct in mkiocccentry now are freed and set to NULL IFF
+(if and only if) they are empty. This not only allows for not checking them for
+NULL (except before showing the contents) but it also allows for more checks
+that were not previously done (some were thought of in the process of this and
+the below change).
+
+Update exit codes in mkiocccentry, allocating `4` for any issue (and there are a
+lot, even more now due to more checks (as above) and `5` for when the user says
+something is not okay. Updated the man page for this though the
+guidelines/rules/FAQ and quick start guide do need to be updated as well (for
+this change possibly and other more recent changes as well). This also lets the
+`mkiocccentry_test.sh` script verify that the exact error code is encountered
+(when testing errors) and not just not 0. Besides additional testing (after code
+freeze and of course before) this should, with the exception of documentation,
+complete the `workdir topdir` model, unless something else useful or important
+is thought of (like the allocation of exit codes and the new approach to
+handling the arrays).
+
+The function `free_info()` now uses the recent function `free_paths_array()` for
+the dynamic arrays of paths.
+
+Better checks on `topdir` in `chkentry` (as in even though the pointers were
+checked for NULL they are now only done if topdir is a directory that can be
+searched).
+
+Updated `MKIOCCCENTRY_VERSION` `"1.2.30 2025-02-21"`.
+Updated `SOUP_VERSION` to `"1.1.22 2025-02-21"`
+Updated `CHKENTRY_VERSION` to `"1.1.2 2025-02-21"`.
+
+
+## Release 2.3.38 2025-02-20
+
+General clean-up.
+
+Removed the no longer used `vermod.sh` script (it was used to modify the
+versions of tools in the JSON files under `test_ioccc/test_JSON` but these files
+are now created at need).
+
+Since we now recommend that one install the tools (since trying to run the tools
+to create a submission tarball from the mkiocccentry directory itself is more
+burdensome and can be problematic) the man pages (in cases where it is
+necessary - and that were not missed) no longer have `./` in front of commands
+(in the examples).
+
+Clean up some usage messages to be shorter (in some ways) especially the length
+of lines (some formatting fixes were also made).
+
+Bug fix in `mkiocccentry` - check for NULL or empty workdir and topdir.
+
+Change mkiocccentry arg count check to be exact as we no longer use extra args
+(though it didn't hurt to have them it might be better to be clear to the user).
+This required updating `mkiocccentry_test.sh` as well.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.29 2025-02-20"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.12 2025-02-20"`.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new util
+function which will be used with issue #1152. This function finds a path in a
+paths array.
+
+BTW: we do realise that a lot of the util functions in jparse have nothing to do
+with JSON parsing but there is a historical reason behind this.
+
+Change `mkiocccentry` to form `.auth.json` and then `.info.json` and then run
+`chkentry(1)` on both of the files. This will changed to running it with a
+single arg - the topdir - but this change allows it to be easier to do once
+`chkentry(1)` has been modified to do this (part of it was done - namely that
+the `topdir` arg is there and 'set' but it's not used yet).
+
+More fixes in `mkiocccentry_test.sh`. It no longer shows the commands of `make
+clobber` from the `mkiocccentry` function `check_submission()`. This is done by
+actually making the test Makefile have empty clobber and clean rules: they're
+not needed anyway. Also to help distinguish output after each mkiocccentry
+command is called it prints '--' and also it now shows the command that will be
+run (the mkiocccentry commands that is).
+
+Make `chkentry` one-arg mode only. It now needs a `topdir` as the arg. More work
+has to be done but now at least the topdir is obtained and processed.
+
+Updated `CHKENTRY_VERSION` to `"1.1.1 2025-02-20"`.
+
+## Release 2.3.37 2025-02-19
+
+Many bug fixes in various tools and a jparse function plus some enhancements in
+jparse (that will be used in `chkentry` at the very least).
+
+Logic fixes in `fnamchk`. It no longer has both a `-u` and a `-t` option.
+Instead of `-t` is used it is test mode (see below). A new option (`-T`) was
+added which says to ignore the timestamp check (results - the parsing is still
+necessary or else the next part will fail). With these changes the issue of the
+minimum timestamp being changed (for new contests or some other reason) is
+resolved (or at most one can just rebuild the error test files).  This also
+fixes a theoretical loophole in `fnamchk(1)` which is far out of scope of this
+document.
+
+`txzchk` gives `-t` to `fnamchk` if given the `-x` option. This is important
+because if a filename starts with `submit.test-` it **MUST** be in test mode. In
+the case `txzchk` test mode (`-x`) it also gives to `fnamchk` the `-T` option
+due to the timestamp change being an issue.
+
+Additionally: `mkiocccentry` now passes to `txzchk` the option `-x` if the test
+mode is active (contest ID is `"test"`).
+
+Bug fixes in `txzchk` (one indirectly by fixing a bug in the `jparse` util
+function `dir_name()` - an edge case that was missed). Files that were not sane
+relative paths (i.e. not POSIX plus + safe chars only) were also not being
+reported (it is not even clear if they were being noted as a problem).
+
+Because of the new `-T` option to `fnamchk` (which is required) as well as above
+bug fixes in `txzchk` the `txzchk` test error files had to be rebuilt.
+
+The `txzchk_test.sh` script now determines if the filename is a test filename
+(it starts with `"submit.test-"`) and if so it passes to `txzchk` the option
+`-x` which will pass to `fnamchk(1)` the `-t` option.
+
+Added a new function `is_executable_filename()` in `soup/entry_util.c` (which
+uses the new array `executable_filenames`) so that the judges can decide which
+files have to be executable (as Landon told me this might happen). The error
+messages (in `txzchk`) have also been updated to show the octal mode too.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for
+improvements to some recent utility functions plus the bug fix to `dir_name()`.
+These new enhancements will be used in `chkentry` in a number of ways but that
+has to be explained later (or not). It might also be useful in other tools but
+that has to be determined later too.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.28 2025-02-19"`.
+Updated `FNAMCHK_VERSION` to `"1.0.4 2025-02-19"`.
+Updated `TXZCHK_VERSION` to `"1.1.14 2025-02-19"`.
+Updated `TXZCHK_TEST_VERSION` to `1.0.4 2025-02-19"`.
+
+
+## Release 2.3.36 2025-02-17
+
+Various fixes and further enhancements to the `find_path*()` functions in
+jparse. One in particular will very possibly be very useful for the
+`chkentry(1)` updates but it's a useful update anyway (allows filtering file
+types by an enum of bits). These were synced from the [jparse
+repo](https://github.com/xexyl/jparse/) to `jparse/`.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.27 2025-02-17"`.
+
+
+## Release 2.3.35 2025-02-16
+
+Multiple fixes and enhancements in some of the jparse util functions. Updated
+mkiocccentry for these fixes/enhancements. Note that `fts_open(3)` has to
+have either `FTS_PHYSICAL` or `FTS_LOGICAL` so the `read_fts()` function
+(prior to calling `fts_open(3)`) now removes both bits and then sets the
+right one based on the boolean. This is why it's no longer in the
+options to the function call - it would be removed anyway since we can't
+assume what is needed (for here we want `FTS_PHYSICAL` but in some cases
+it might not be desired and there was no way to be correct otherwise).
+
+There are other improvements and fixes as well.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.26 2025-02-16"`.
+
+
+## Release 2.3.34 2025-02-15
+
+Added `-I path` option to `mkiocccentry(1)` to ignore a path. This option can be
+specified more than once. The path is **under** the topdir (in other words if
+you have a file `topdir/foo` and you specify `topdir` as your `topdir` and you
+wish to ignore `topdir/foo` you would use `-I foo`, not `-I topdir/foo`). This
+was added because some people have files/directories in their submission
+directory that they do not want to submit (but do want in their directory) that
+would normally be included by `mkiocccentry(1)`. This has been added to help and
+the man page but not the FAQ, guidelines or rules (yet).
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for
+improvements (and fixes) to some utility functions (renamed due to the
+improvements) (one of which is used by the new feature).
+
+Update `MKIOCCCENTRY_VERSION` to `"1.2.25 2025-02-15"`.
+
+
+
+## Release 2.3.33 2025-02-14
+
+Fix issue #1159 - -i answers always answers yes.
+
+This is absolutely **ESSENTIAL** so that we don't have to worry about changes in
+file sets that would cause problems; if any file set (that we have to confirm is
+OK) changed the answers file would be **ENTIRELY** useless because the order of
+the answers would be different (i.e. we would need an **additional** line!). To
+be helpful if `answer_yes == true` (i.e. `-y` is used or implied) and `!quiet`)
+(i.e. `-q` not use) we will warn the user that we will answer yes to every
+question (at the beginning right after the `Welcome to mkiocccentry` message).
+We use the `print` macro from `jparse/` rather than `msg()` from `dbg` or
+`printf` with a single check because it performs many more checks which is very
+important when always answering yes (perhaps the function `pr()` that `print`
+uses should allow a string without having to have a format but that's another
+matter entirely).
+
+Improved the handling of user saying 'no' to a question: namely it suggests the
+user fix their topdir (giving the absolute path we determined earlier) and
+remove the submission directory (which is under the workdir) also giving the
+absolute path determined earlier on.
+
+Note that `mkiocccentry_test.sh` already uses `-q` so we don't need to update it
+(since it's not necessary to show this stuff for tests). The reason this issue
+was not detected earlier is because the script uses `-y`. Even so the code
+`copy_topdir()` and also `check_submission()` now do `if (!answer_yes &&
+!read_answers_flag_used)` instead of just `if (!answer_yes)` (not strictly
+necessary but this adds another layer of defence in case something goes wrong).
+
+A message was incorrect too (referred to the wrong type of file).
+
+Additionally an unnecessary arg to `get_contest_id()` was removed (it was a
+pointer to `read_answers_flag_used` but that is a global variable so it's
+unnecessary to have it in the function as we can just set read/set its value as
+necessary.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new
+utility functions that will be useful for issue #1152.
+
+Renamed `append_unique_str()` in mkiocccentry to `append_unique_filename()`.
+
+Sequenced exit codes.
+
+
+## Release 2.3.33 2025-02-13
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new
+utility functions (FTS related as well as at least one other). These FTS related
+ones are useful for both #1070 (which it now uses) and also the new issue #1152.
+Most importantly (at this time) is that we no longer use the `fts_open()` and
+`fts_read()` functions directly: instead it is `read_fts()` which is a wrapper
+to it but one can call it multiple times to get the next entry in the tree.
+Using this has multiple advantages which will be more fully realised once issue
+#1152 is being worked on (that includes possibly the new function
+`find_file()`, though theoretically #1070 could also use it - it just does not
+need to). The function `find_file()` returns the path from the directory
+searched so one can `fopen(3)` it if they wish.
+
+As a special feature of `read_fts()`, one can switch back to the original
+directory, depending on the args (all NULL / -1 except for the `int *cwd` which
+must be not NULL and `*cwd` must be >= 0); this is useful because the function,
+if `dir` != NULL (or `dirfd` is a valid directory FD) will change the directory.
+This can be used after `find_file()` as well as long as you make sure that `cwd`
+is not NULL and `*cwd` is a valid FD (the feature will call `close(*cwd)` so it
+is no longer valid until it is obtained again perhaps by another call to the
+function).
+
+Added `/test_ioccc/topdir` to .gitignore.
+
+Start work on issue #1152. Added ignored filenames list option.
+
+
+
+## Release 2.3.32 2025-02-12
+
+Remove outdated man pages.
+
+In particular: the man pages ending in `.sh.[0-9]` were out of date. They were
+at one point symlinks but this was undone by accident. The only man pages up to
+date in this way are the ones without the `.sh` (so for example `ioccc_test.8`
+was updated but `ioccc_test.sh.8` was not). The make uninstall rule still
+removes those files but the make install rule does not install them as they no
+longer exist.
+
+Don't warn about but make it an error if the submission directory does not have
+a file or directory that was not ignored/not copied for some reason that did
+exist in the topdir. This checks by type too: if a directory was called `foo`
+but in the submission directory it was a file it is considered a missing
+directory. This is an important check. If there is a missing file or directory
+(symlinks are an error in the submission directory so we don't check for missing
+symlinks) it means something went wrong (or perhaps the user was messing about
+with the tool which is also an issue) and this is why it is now an error. Since
+the `fts_cmp()` function I added makes sure that the files and directories are
+listed in the same order in both `scan_topdir()` and `check_submission()` the
+way checking for missing files and directories is done should be fine.
+
+Add to list of ignored directories for other RCSs.
+
+When printing lists of ignored directories/files (not the ones found in the
+topdir but those that we do not allow like ignored directories, forbidden
+filenames etc.) it now prints them in tabular form. The same could be done for
+what is in topdir (and later on submission directory) but not doing this makes
+it easier to verify everything is okay.
+
+Improve handling of questions/answers/errors.  In particular in mkiocccentry
+when getting the submission slot number, title and abstract of the submission,
+it now asks the user to confirm their input. This is useful because if they make
+a typo they would have to start all over (and in some places like with author
+details it actually does ask you to confirm).  Also if an output error (telling
+the user of invalid input) occurs it is a fatal error as otherwise the user
+might not know what is going on.  If there is a failure to write to the answers
+file it is now an error as it could lead to incorrect input (and in fact
+previously it warned the user at the end to be very careful that everything is
+okay).  Additionally improved some wording/formatting of some prompts (or extra
+details about the prompts).
+
+Add even more sanity checks to `check_submission()` to make sure that files
+(depending on name) and directories are the correct permissions. This is done by
+new `jparse/` util functions (synced from the [jparse
+repo](https://github.com/xexyl/jparse/)). Now not only will `txzchk(1)` detect
+invalid permissions but so will `mkiocccentry(1)` (and a bug fix in the
+`mkdirs()` function was also made but not documented by mistake).
+
+`mkiocccentry_test.sh` now tests the optional files as well (that is
+`prog.alt.c`, `try.sh` and `try.alt.sh`).
+
+Add link to example Makefile in `warn_Makefile()`, encouraging and recommending
+its use.
+
+Cleaned up warning in `check_submission()`.
+
+More sanity checks in `scan_topdir()` and `check_submission()`: make sure that a
+directory name is not the same as a required or optional filename. That does not
+mean that one couldn't have a subdirectory with that name but it cannot be in
+the top level of the submission directory.
+
+Plug some holes in txzchk. This includes not checking the max depth of a
+directory (only total number of directories was checked), checking that a
+directory is not named a required/mandatory filename, certain other directory
+name checks and other such things. Rebuilt the test error files.
+
+Improved `is_forbidden_filename()`: if it's not in the forbidden filenames
+list but it does start with a `.` and it's not a required filename like
+`.auth.json` or `.info.json` it is a forbidden filename (it is true that
+the function `sane_relative_path()` would pick up on this but this is
+defence in depth).
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.22 2025-02-12"`.
+Updated `TXZCHK_VERSION` to `"1.1.13 2025-02-12"`.
+Updated `SOUP_VERSION` to `"1.1.20 2025-02-12"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to` "1.0.11 2025-02-12"`.
+
+
+## Release 2.3.31 2025-02-11
+
+Bug fix and improvements in `mkiocccentry_test.sh`.
+
+The script ended up repeating author information (duplicate entry) and also
+changed author handles to wrong strings (in some cases it changed it to `n`).
+This happened because the `answers()` functions (changed throughout the script
+per test) were not updated when the `-y` option was added to `mkiocccentry`
+(which I added to solve another problem).
+
+The improvement is that to make the args consistent with the `mkiocccentry(1)`
+tool itself it now uses the directories `test_ioccc/workdir` and
+`test_ioccc/topdir`: updating the script and the `.gitignore` file.
+
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.10 2025-02-11"`.
+
+Updated FAQ about installing the tools, giving better details on why it is
+**HIGHLY** recommend you do and also what you have to do if you do not (as it
+requires more work).
+
+Fix `bug_report.sh` to check `test_ioccc/gen_test_JSON.sh`.
+
+Fix `test_ioccc/ioccc_test.sh` to have a `-m make` option for those who need to
+specify a path to a GNU `make(1)` tool. One can use this with `make test` by way
+of:
+
+```sh
+make MAKE=/path/to/gnumake test
+```
+
+for example.
+
+Fix `test_ioccc/gen_test_JSON.sh` to work for NetBSD (change in `grep` regexp).
+
+Add hints to `mkiocccentry` when reporting files/directories/symlinks that will
+not be added/made. If `need_hints` is false this is not done. This should help
+users out so that they do not have to go to the FAQ just to find out what is
+wrong.
+
+Change `mk_submission_dir()` to use `mkdir(2)` with mode 0 and then use
+`chmod(2)` with the correct modes. This should fix the issue where the directory
+made has the wrong mode due to umasks like what happened with NetBSD. (This is
+also how the `mkdirs()` function from `jparse` works.)
+
+Important bug fixes in `mkiocccentry` for issue #1070, as noted below:
+
+- There was a potential invalid pointer references in multiple places in
+`check_submission()`.
+- (I think) Some checks were using the wrong variables (in `check_submission()`
+in particular, again I think).
+- If any file or directory in the submission directory does not exist in the
+topdir it is an error.
+- Extra sanity checks on the three required files (`prog.c`, `Makefile` and
+`remarks.md`).
+- Now all lists in the topdir must be the same as the submission directory even
+those that are of size 0 (like directories or extra files).
+- Added function `array_has_path()` which `append_unique_str()` uses and which
+`copy_topdir()` and `check_submission()` use. This helps identify if a name
+(path) is the same type of file. For instance if in the topdir a file called
+`foo` existed but in the submission directory `foo` was a directory it is an
+error.
+- More checks on lists of files and directories in submission directory versus
+the topdir (including for missing files and directories).
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.21 2025-02-11"`.
+
+
+## Release 2.3.30 2025-02-10
+
+Change `MAX_DIR_COUNT` to `MAX_EXTRA_DIR_COUNT`.
+
+To make it much less confusing the submission directory is no longer considered
+with the maximum number of directories allowed. This required an algorithm
+change in `txzchk(1)` as well as some updates to how `mkiocccentry(1)` checks
+if there are too many extra directories.
+
+As for `txzchk(1)` the struct `txz_file` now has a `char *top_dirname` (which is
+calculated like `dir_name(path, -1);)`. In the case `fnamchk(1)` did not fail
+(i.e. `dirname` - renamed from `dir_name` is not `NULL`) and we found a
+directory (first char of the line is `d`) we get the directory name with the
+trailing `/` removed (`dir_name(path, 0);`) and compare it with the top
+directory name; if they're not the same and the `dirname` (the submission
+directory name) is the same as the top directory name then it's an extra
+directory.
+
+Added function `free_txz_file()` which takes a pointer to a pointer to a `struct
+txz_file` and is called by `free_txz_files_list()`.
+
+Fixed check of `len < 0` of directories in `scan_topdir()`.
+
+Important bug fixes in `mkiocccentry(1)` for issue #1070. This includes some
+file types not accounted for (including error conditions) as well as
+modularisation of these checks (new function `check_ftsent()`) plus better
+(more) comments.  Moved `has_ignored_dirname()` to `soup/entry_util.c`. In
+`copy_topdir()` there is no need to `fchdir(cwd)` only to close the descriptor
+only to obtain the file descriptor in `check_submission()` when we can simply
+pass it to the function.
+
+Bug fix `test_github()`: it did not check if there was a character after the
+`@`.
+
+Update `mkiocccentry.1` for issue #1070.
+
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.20 2025-02-10"`.
+Updated `TXZCHK_VERSION` to `"1.1.12 2025-02-09"`.
+Updated `SOUP_VERSION` to `"1.1.19 2025-02-10"`.
+
+
+## Release 2.3.29 2025-02-09
+
+Add a limit on the number of directories in a submission so that one cannot
+abuse the fact that there was no limit on number of directories besides the
+depth of subdirectories. For `txzchk(1)` (due to how it works) it counts the
+submission directory itself (which is why it is `MAX_DIR_COUNT` and not
+`MAX_EXTRA_DIR_COUNT`) but for `mkiocccentry(1)` it does not count the
+topdir/submission directory as that would be confusing to users (it would seem
+like there is a bug as well whereas now it only would be confusing if they look
+at the macro - but since that's unlikely it is less of a problem and it's less
+confusing than in `txzchk(1)` as in the tarball you do see the submission
+directory itself). This update does require a chance in documentation.
+
+The number chosen was arbitrarily selected and certainly could be modified by
+the judges if desired but I chose 13: not only did it seem like a reasonable
+choice but it's a prime and also is a swap of the digits in the max extra file
+count (which also happens to be prime).
+
+Remove dead code from `scan_topdir()` and `check_submission()` and in the
+process make it easier to see that every condition is covered (every return
+value from `sane_relative_path()` in other words). This fix should make it
+easier to document the process of `mkiocccentry(1)`. This means that the array
+`ignored_files` is no longer needed as well.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.19 2025-02-09"`.
+Updated `TXZCHK_VERSION` to `"1.1.12 2025-02-09"`.
+Updated `SOUP_VERSION` to `"1.1.18 2025-02-09"`.
+
+
+## Release 2.3.28 2025-02-08
+
+Make some fixes for issue #1070.
+
+Add missing lists to present to user (before copying files) such as: directories
+to be made; unsafe files and directories to be ignored (instead of making it an
+error - it is an error only if in the submission directory). When traversing the
+submission directory create lists for directories so these can be presented to
+the user as well (if any that are in the topdir are not found in the submission
+directory).
+
+Use macros instead of raw octal modes (for `mkdir(2)`/`mkdirs()`/`copyfile()`).
+
+Various other fixes might also have been made.
+
+Modularise `copy_topdir()` and `verify_submission()` by splitting them into
+three functions. The first part of `copy_topdir()` is now in `scan_topdir()` and
+it does the scanning (up to the point of making sure the required files exist in
+the topdir and that there are not too many files). At the end of the function it
+will call the new `copy_topdir()` which lists everything to the user and asks
+for verification. If the user is okay with everything then directories are made
+(if necessary) and files are copied over. Then if nothing is wrong after that
+`copy_topdir()` will call `check_submission()` which makes sure everything that
+is in `topdir` exists in the submission directory and also run other tests like
+`check_prog_c()`, `check_Makefile()` and `check_remarks_md()`.  The check for
+unique strings in the lists is now case-insensitive for filesystems that do not
+distinguish case (just like we do when checking that an extra file is not the
+same name, regardless of case, as a required file, for example).  The check for
+prog.c, Makefile and remarks.md are still case-sensitive.
+
+
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.18 2025-02-08"`.
+Updated `SOUP_VERSION` to `"1.1.17 2025-02-08"`.
+
+
+## Release 2.3.27 2025-02-07
+
+Resolve issue #1070.
+
+The simplified command line should be complete! (Or if not complete it is just
+about complete and should be done relatively simply.) The next step will be to
+update the man page and any documentation in the website (that might have to be
+done, perhaps talking about all the steps).
+
+I renamed the `mkiocccentry()` function to `copy_topdir()` and the function that
+verifies everything is `verify_submission()` (yes this is unfortunate because of
+the `verify_submission_dir()` which actually happens after `verify_submission()`
+but it seemed like an appropriate name - and unfortunately it comes much later
+in the process so they can't be merged).
+
+Add list of ignored symlinks to `copy_topdir()`. This is useful as otherwise the
+user might think it's a regular file and not understand why it's being ignored.
+
+Ask user if forbidden files list is okay (even though they are always forbidden
+it might be that the user needs such a file in the submission and they can come
+up with some other way to go about it).
+
+Move the check of `prog.c`, `Makefile` and `remarks.md` to the second step
+(during the traversing of the submission directory where the files were copied
+to).
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.17 2025-02-07"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.9 2025-02-07"`.
+Added `Makefile.test` in `test_ioccc` which the `mkiocccentry_test.sh` script
+uses. This is necessary because the Makefile that was used before was the top
+level Makefile here and using `make clobber` on it caused errors (because of
+missing subdirectories).
+
+Unrelated but I have removed `XXX` comments in FAQ.md as the task had been done
+(updating links after the great fork merge).
+
+
+## Release 2.3.26 2025-02-06
+
+More work on #1070.
+
+`collect_topdir_files()` has been renamed `mkiocccentry()`.
+
+`write_info()` now writes additional files to the manifest. This means the
+dynamic arrays are in the struct info (the `extra_files` variable in the struct
+has been removed and the `extra_count` is a `size_t`).
+
+The required files are now processed (checked) after traversing the topdir.
+These files are in a new array (`required_files`) and they are shown to the user
+prior to showing any extra files (which in this case includes files that are not
+try.sh or try.alt.sh).
+
+The `check_prog_c()`, `check_Makefile()` and `check_remarks_md()` functions had
+to change because we cannot (and this was a bug fix) know exactly where the
+files might be (or where the user runs the program from, see below).  These
+functions also no longer check the filename length of the files as we already
+know they are the correct length AND also the new path is not necessarily the
+same. Also, the `char *`s that have the filenames of `"prog.c"`, `"Makefile"`
+and `"remarks.md"` are no longer there: we simply write them directly (this was
+necessary because a problem occurred - though that was likely fixed - and
+because we no longer need it anyway as the filenames are exact [before one could
+specify a different filename and it would copy it to the right filename but now
+this is not possible]).
+
+The `free_info()` has been changed to account for the changes in the struct.
+
+Updated `find_utils()` to check for `make(1)` (default paths `/usr/bin/make` and
+if not that `/bin/make`). New option to `mkiocccentry` is `-m make` to do this.
+This will be needed for part of #1070.
+
+Updated `mkiocccentry(1)` or the new `-m make` option.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.16 2025-02-06"`.
+Updated `SOUP_VERSION` to `"1.1.16 2025-02-06"`.
+Updated `TXZCHK_VERSION` to `"1.1.11 2025-02-06"`.
+
+
+## Release 2.3.25 2025-02-05
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new
+utility function `mkdirs()`. As described in `jparse/CHANGES.md`:
+
+    New util function mkdirs() (using mkdir(2)) which acts as mkdir -p with
+    specific modes (uses chmod(2) as it's not affected by the umask and also
+    because anything but permissions set with mkdir(2) is undefined). If the first
+    arg (an int) is -1 (actually < 0) it uses the current working directory to
+    start out with; but one can pass a file descriptor of the directory to start out
+    with. The mode is only set on directories that are created (i.e. no error)
+    because otherwise an already existing directory could have its mode changed.
+    Just like with mkdir(2) one must be careful with the mode. Of course if one
+    sets a mode like 0 then trying to work under it would be a problem but that's on
+    the user. If there is an error in creating a directory then it only aborts if
+    errno is not EEXIST (already exists) so that it can continue (just like
+    mkdir -p).
+
+This is used to create (sub)directory trees in submission tarballs.
+
+Function `verify_submission_dir()` now uses `-R` in `ls` and while there is a
+line to read it checks if it matches the correct form. When the loop is done if
+no correct line was found then it is an error (if it's < 0 from the beginning it
+is also an error).
+
+`collect_topdir_files()` now copies additional files to the submission
+directory. It requires obtaining absolute paths for the target file and the
+source files because otherwise files might not be found (this does mean we have
+to use `getcwd()` and have buffers of size `PATH_MAX+1`). There are numerous XXX
+comments added pointing out that some of this has to be changed and perhaps
+cleaned up (one such thing is that prog.c, Makefile and remarks.md will not be
+checked when traversing the topdir but processed later on with the other files -
+but there are other things that have to be done in addition to steps not yet
+implemented). So although some of this will have to be changed some of it can
+simply be moved and perhaps changed a bit (or adapted into what has to be done
+depending on the steps). Depending on the file the permissions are different
+(`try.sh` and `try.alt.sh` are the only ones allowed to be executable, for
+example).
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.15 2025-02-05"`.
+
+## Release 2.3.24 2025-02-04
+
+`collect_topdir_files()` now creates dynamic arrays for lists of
+files/directories (ignored/skipped, added etc.), sorted after traversing the
+directory. Although it does add the `prog.c`, `Makefile` and `remarks.md` during
+the traversing of the directory it still adds those to the list of files. When
+the traversing is done it shows the user the list of files and it will prompt
+them if everything is in order (assuming the three required files were found and
+there was not an error condition). Some arrays are not shown to the user (yet?)
+and it is not yet clear if all of them will be needed either.
+
+Add symlinks to ignored files list in `collect_topdir_files()`.
+Show forbidden files list in `collect_topdir_files()`.
+
+The `mkiocccentry_test.sh` script had to be updated due how the checks on the
+maximum depth is now done.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.14 2025-02-04"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.8 2025-02-04"`.
+
+## Release 2.3.23 2025-02-03
+
+Improve function `copyfile()` (from [jparse
+repo](https://github.com/xexyl/jparse/)) so that it can either copy the mode
+from the source file to the destination file (mode as in `stat(2)`'s `st_mode`)
+OR set to a specific mode. This necessitated updating `mkiocccentry(1)`.
+
+Use (in `copyfile()`) `errp()` in some cases where it was `err()` (when we had
+`errno`). Also in case of `errp()` use `strerror(errno)`.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.13 2025-02-03`.
+
+
+## Release 2.3.22 2025-02-02
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new
+utility function `copyfile()`. As described in `jparse/CHANGES.md`:
+
+    Added new util function copyfile() which takes a source (char const *) and
+    dest (char const *) file (paths) (and a mode_t) and copies the source into
+    the dest, assuming that src file is a regular readable file and the dest file
+    does not exist. If the number of bytes read is not the same as the number of
+    bytes written, or if the contents of the dest file is not the same as the
+    contents of the source file (after copying) it is an error. If mode is not 0
+    it uses fchmod(2) to set the file mode.  This function does NOT create
+    directories but it can take directories as args, as long as they exist.
+
+`mkiocccentry` now uses `copyfile()` instead of `cp(1)`. Updated `find_utils()`
+to not look for `cp(1)` and removed `CP_PATH_0` and `CP_PATH_1` macros. The
+calls to `find_utils()` were updated which means `txzchk` was also updated.
+`mkiocccentry_test.sh` no longer has the `-c cp` option. Updated man pages of
+`mkiocccentry` and `mkiocccentry_test.sh`.
+
+`collect_topdir_files()` now skips descendants of ignored directory names. It
+also checks for forbidden filenames before checking the file type. The same goes
+for checking if it's a sane relative path. Prior to checking the file type, if
+it is ignored it will be processed (as necessary - not yet done) and if it's a
+forbidden filename it will also be processed (as necessary - not yet done). If
+it is not ignored and not forbidden then we check if it's a sane relative path
+and depending on the type of file (directory or regular file) we do the next
+step. There still is no list of files yet but this prevents having to go down
+directories that are to be ignored and not checking forbidden filenames (other
+than it being forbidden) etc.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.12 2025-02-02"`.
+Updated `MKIOCCCENTRY_TEST_VERSION` to `"1.0.7 2025-02-02"`.
+Updated `TXZCHK_VERSION` to `"1.1.10 2025-02-02"`.
+Updated `SOUP_VERSION` to `"1.1.15 2025-02-02"`.
+
+
+
+## Release 2.3.21 2025-02-01
+
+Add `O_CLOEXEC` flag to `open(2)` in `write_info()` and `write_auth()` functions
+in mkiocccentry.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.11 2025-02-01"`.
+
+Remove unused `test_paths()` from `soup/entry_util.c`.
+
+
+## Release 2.3.20 2025-01-31
+
+Updated `mkiocccentry.1` for new `mkiocccentry(1)` command line syntax along
+with some other fixes. More checks need to be done with this update, however.
+
+Fix `txzchk` to use macro names for `try.sh` and `try.alt.sh`. Also add new
+count variables for files with invalid permissions and number of executable
+files. Added a good test file and a bad test file. Rebuilt error files.
+
+Updated `TXZCHK_VERSION` to `"1.1.9 2025-01-31"`.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` for new
+utility function to check for ignored (or if desired forbidden) path components.
+This will be useful when traversing directories. It is currently used for this
+but ignored paths are still not processed (just skipped). (A new function was
+added to mkiocccentry.c for this too.)
+
+Fixed bug in mkiocccentry where the max depth error was reporting the wrong
+depth.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.10 2025-01-31"`.
+
+
+## Release 2.3.19 2025-01-30
+
+More work on #1070.
+
+The files (unless `try.sh` or `try.alt.sh` but see below) copied are now
+read-only (as in `-r--r--r--`) and directories are `drwxr-xr-x`) and `txzchk(1)`
+now verifies this. In order to get tests to work the copying of extra files is not
+done so technically the `try.sh` and `try.alt.sh` part is for future reference.
+To be specific, the following permissions will be set by mkiocccentry and
+verified by txzchk:
+
+- executable files MUST be either try.sh or try.alt.sh and MUST be in the top
+directory and MUST be `-r-xr-xr-x`. If any other executable file is found it is
+an error.
+- directories MUST be `drwxr-xr-x`. If any other permissions for
+directories are found it is an error.
+- other files MUST be `-r--r--r--`. This includes the three mandatory files AND
+`.info.json` AND `.auth.json`. If any other permissions for files are set it is
+an error.
+
+The test suite still checks for depths that are too deep because the
+`collect_topdir_files()` scans the entire tree. The only difference now is that
+no extra files are copied. As the `check_extra_data_files()` function would
+become obsolete when this issue is resolved it is not a big deal that the
+function is now gone, especially as the way it was called was not how it will be
+done (the `workdir` is the source of all files not just the required files).
+Because of this change the `extra_count` is set to 0. However the test files
+still can be verified and the test txzchk files are not affected by this fact.
+Thus the only change here is that extra data files are not currently copied to a
+submission directory and won't be until the rest of the `topdir` is processed.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.9 2025-01-30"`.
+Updated `TXZCHK_VERSION` to `"1.1.8 2025-01-30"`.
+
+
+
+
+## Release 2.3.18 2025-01-29
+
+More work on #1070.
+
+The `collect_topdir_files()` now verifies that all three required files
+(`prog.c`, `Makefile` and `remarks.md`) are found.
+
+The `collect_topdir_files()` also only records extra files if it's not an
+optional file or a required file.
+
+Removed the `MKIOCCENTRY_DEV` macro. Instead it now defaults to the new way but
+with the ability to (for now) specify extra files as additional args. This is
+not how it will remain but this change allows for easier development. The
+`mkiocccentry_test.sh` script was updated to account for this. The `warn_*()`
+functions no longer take a `char const *` of the file they are warning against
+as it's required to be the specific names so there is no need to repeat it (plus
+it's called in multiple locations and we do not always have the path).
+
+This means that `make test` can work in the new way though later the script will
+have to be changed again.
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.8 2025-01-29"`.
+
+Bug fix debug output in `txzchk` when adding full filename to list (previously
+it had to do basename but now full path).
+
+Updated `TXZCHK_VERSION to "1.1.7 2025-01-29"`.
+
+
+## Release 2.3.17 2025-01-28
+
+Make more progress on #1070.
+
+Rename `collect_files()` to `collect_topdir_files()`. The function now checks
+for `prog.c`, `Makefile` and `remarks.md`, running the checks on them (like in
+the old command line interface), copying them to the work directory if all is
+okay. To do this it has to record the directory that the tool was run from as
+well as the topdir (as in file descriptor of it) as it has to switch back and
+forth between the directories. For the `check_prog_c()`, `check_Makefile()` and
+`check_remarks_md()` functions the filenames have to be faked: that is they have
+to be in the form: `topdir/prog.c`, `topdir/Makefile` and `topdir/remarks.md`.
+
+For now the code also allows one to specify extra filenames as optional args.
+This will change when this issue is resolved completely as only files under
+topdir will be copied over. Doing this for now does allow for extra files to be
+copied to the submission tarball, however, which is useful for testing.
+
+No lists are yet created so we do not show the user what directories/files were
+ignored. It is very likely that some (or possibly a lot) of this code will have
+to change but it should be possible to adapt it into new functions (which will
+be necessary).
+
+Added new functions to check if a string (or a `char const *`) matches a
+mandatory filename, a forbidden filename, an optional filename or an ignored
+directory name. These functions are used in the `test_extra_filename()` function
+(which now also checks for ignored directory names).
+
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.7 2025-01-28"`.
+Updated `SOUP_VERSION` to `"1.1.14 2025-01-28"`.
+
+
+## Release 2.3.16 2025-01-26
+
+More work on #1070: the check on files being found now is done from the
+directory that the user specifies. This involved an enhancement to the jparse
+function `sane_relative_path()`. That enhancement allows filenames to start with
+`./` as when walking from `.` the function prepends `./` to each filename. There
+very possibly will be a new enhancement/utility function required before the
+filenames can be written to the .info.json file but that will have to be
+determined later.
+
+A memory error was fixed in the `jparse` function `count_comps()`.
+
+Updated `SOUP_VERSION` to `"1.1.13 2025-01-26"`.
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.6 2025-01-26"`.
+Updated `TXZCHK_VERSION` to `"1.1.6 2025-01-26"`.
+
+
+## Release 2.3.15 2025-01-24
+
+More work done on #1070. The function `count_files()` in `soup/entry_util.c` has
+been renamed to `collect_files()` and it now only counts files that are valid,
+checking for unsafe names, depth too deep, too long filenames and so on. If too
+many files are found (it does not consider optional files or required files yet)
+it is also an error. Nothing is added to a list yet.
+
+The mkiocccentry tool has been updated to use this function, showing debug
+output if `-v 1`. It can no longer fake the paths to `prog.c`, `Makefile` and
+`remarks.md` so it exits 0 after the call to the `collect_files()` function.
+With low debug level (1) it will show what files are collected.
+
+Updated `SOUP_VERSION` to `"1.1.12 2025-01-24"`.
+Updated `MKIOCCCENTRY_VERSION` to `"1.2.5 2025-01-24"`.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` to fix some
+minor issues in `sane_relative_path()`.
+
+
+## Release 2.3.14 2025-01-20
+
+The `test_ioccc/test_JSON` is now built by a new tool `test_ioccc/gen_test_JSON.sh`
+via the `make test_JSON` rule in `test_ioccc/Makefile`.
+
+The `test_ioccc/gen_test_JSON.sh` tool builds `test_ioccc/test_JSON` from
+`test_ioccc/template.test_JSON` as well as `soup/limit_ioccc.h` and
+`soup/limit_ioccc.h` to change selected values of the form %%TOKEN%
+so that changes to, for example, versions will be automatically
+applied to the resulting `test_ioccc/test_JSON` tree.
+
+The `make clobber` rule in `test_ioccc/Makefile` removes
+the `test_ioccc/test_JSON` tree.
+
+Fixed a number of broken tests in the `test_ioccc/test_JSON` tree.
+
+Updated and sorted `.gitignore`.
+
+Fixed debug message that incorrectly stated that was unknown.
+
+Changed `MKIOCCCENTRY_REPO_VERSION` from "2.3.12 2025-01-18"
+to "2.3.14 2025-01-20".
+
+Changed `SOUP_VERSION` from "1.1.10 2025-01-19"
+to "1.1.11 2025-01-20".
+
+Change `mkiocccentry_test.sh` to not test `-d` as it now sets `-E` which causes
+a failure.
+
+Add to the macro `MKIOCCCENTRY_DEV` so that for now it at least will run the
+tests on `prog.c`, `Makefile` and `remarks.md` and form the tarball even though
+it's not complete (it won't ignore the right files, it doesn't do anything with
+the other files etc. but this way at least the program won't fail when working
+on the issue).
+
+Changed `MKIOCCCENTRY_VERSION` to `"1.2.4 2025-01-20"`.
+
+
+## Release 2.3.13 2025-01-19
+
+Bug fix `noprompt_yes_or_no()` in `mkiocccentry.c` (it had missing
+`not_reached()` after `err()` calls).
+
+Bug fix `inspect_Makefile()` in `mkiocccentry.c` to skip built-in Makefile rules
+(those starting with a '.') because if someone has, for instance, what we have
+here and in jparse (`.NOTPARALLEL:`) it will confuse the checker and cause the
+'all' rule to not be detected as first which puts the submitter at a big risk of
+violating rule 17.
+
+Change `MKIOCCCENTRY_VERSION` to `"1.2.3 2025-01-19"`.
+
+Start work on issue #1070. To not interfere with the current system and to allow
+others (namely Landon) to work on it too, it uses a macro: `MKIOCCCENTRY_DEV`.
+If this is defined it will require 2 args and it will not set the prog.c,
+remarks.md or Makefile variables as they won't exist. This means the functions
+that pass in those variables are not called either. The usage message is
+simplified for the dev version. If it is defined it will set the topdir too.
+Also changed the `work_dir` variable to `workdir` (in both modes). If
+`MKIOCCCENTRY_DEV` is used to compile the tool then `make test` **WILL** fail!
+This is because the script uses the old four mandatory arguments (and the
+optional files in some cases too).
+
+Fixed a NULL pointer dereference in `mkiocccentry`: `answers` was passed to
+dbg() even if it was NULL (none of the answers options were used).
+
+
+## Release 2.3.12 2025-01-18
+
+Increase the `OPTIONAL_SUBMISSION_FILES` to 3 due to the additional optional
+file `try.alt.sh`.
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` to fix some
+bugs and add missing strings (to `-h` and `-V` in some tools). Also bug fixed
+the `jparse_bug_report.sh` script (yes this is ironic).
+
+## Release 2.3.11 2025-01-17
+
+Bug fix `txzchk` to check for required files in top level directory only (with
+the exception that dot files are not allowed in any subdirectory and the only
+dot files allowed in the top level directory are `.info.json` and `.auth.json`).
+
+Added new test files to `txzchk` test suite, both good and bad (with associated
+`.err` files).
+
+This fix involved a bug fix and enhancement to the jparse library (not the JSON
+parser but the `util.c` file) which involved syncing the jparse repo again.
+
+Updated `TXZCHK_VERSION` to `"1.1.4 2025-01-17"`.
+
+Added new macro (in jparse) `JPARSE_UTILS_VERSION` set at `"1.0.0 2025-01-17"`.
+This is strictly so that the JSON parser library version is not changed when
+something not strictly related the jparse JSON parse(r) related routines are
+changed. In other words, `json_util.c` is a jparse library version (like
+`jparse.l` and `jparse.y`) change but a change in `util.c` is a change in the
+`JPARSE_UTILS_VERSION`. The tools (in jparse and here) now refer to this in both
+`-h` and `-V`.
+
+Added even more bad `txzchk` test files for those with special bits (as anything
+not marked as `-` or `d` in `ls -l`).
+
+Reversed the argument order for `chkentry(1)`.  Now the `.auth.json` arg
+comes before `.info.json`.  Now, one may do the following, assuming that
+the `topdir` has the `.auth.json` and `.info.json` files:
+
+```sh
+chkentry topdir/.*.json
+```
+
+Major updates to `txzchk(1)`. It no longer tests for total files against the
+maximum but rather extra files against the extra file maximum. As subdirectories
+are now allowed the warning for more than one file with the same name depends on
+the directory. It might be worth noting that when an identical filename is found
+more than once it increments the count but it can cause confusing output exactly
+because it is confusing (and should never happen unless someone is messing with
+their tarball or has some system error). It also now checks for optional files
+which do not count against extra files and neither do required files. In a
+function a variable was no longer used so it has been removed and in some other
+places code was no longer necessary (where it was) so said code was also
+removed. Added a new test case file in both good and bad directories. Rebuilt
+error files.
+
+Possibly some bug fixes were made during the above.
+
+Updated version of `txzchk` to `"1.1.5 2025-01-18"` and updated JSON files to
+account for this.
+
+New array in `soup/entry_util.c` which is of optional filenames (these only count
+if they're in the top level directory).
+
+Bug fix `bug_report.sh` to check for `Makefile.local`, not `makefile.local`.
+This same change was done in other files that still referred to it with the
+exception of this file and .gitignore. It was done in dbg/ and dyn_array/ but
+the change needs to be done in the repos too.
+
+
+## Release 2.3.10 2025-01-16
+
+Added `-E` to `mkiocccentr(1)` to exit non-zero (1 in fact) on
+the first warning.
+
+Added `-s seed` to `mkiocccentr(1)` seed a pseudo-random generator,
+then generate a `random_answers.seed` file with pseudo-random answers,
+and then to use that as if `-i random_answers.seed` had been called with
+pseudo-random answers.  This is useful as a **dry run** in that one does
+not have go thru the interactive process of answering questions.
+
+Added `-d` as an alias for `-s 21701`.
+
+While an effective seed is any value from 0 thru 2147483647, we tested
+`mkiocccentr -s seed` for seeds 0 thru 32767.
+
+Fixed the message about use of the 'test" user to not refer
+to sending Email.
+
+Removed the need for `IOCCC_WINNER_HANDLE_READY` as it is now ready.
+The hint now refers to the FAQ URL:
+
+    https://www.ioccc.org/faq.html#find_author_handle
+
+Fixed typos in `soup/location_tbl.c` where there were improper trailing
+commas in strings.
+
+Moved `MKIOCCCENTRY_ANSWERS_EOF` from `mkiocccentry.h` to
+`soup/version.h`, even though it is not strictly a version related
+string, because `MKIOCCCENTRY_ANSWERS_EOF` is used in conjunction with
+`MKIOCCCENTRY_ANSWERS_VERSION` which is in `soup/version.h`.
+
+Fixed `mkiocccentry -y` so that it prevents a yes/no prompt from being
+used.  The use of `mkiocccentry -i answers` will ask the user to verify
+the list of files for the submission unless `-y` is also given.
+
+The highbit warning is not permanently set to `false` as we now allow
+all UTF-8 in IOCCC source code.
+
+Changed `MKIOCCCENTRY_VERSION` from "1.1.6 2025-01-13"
+to "1.2 2025-01-16".
+
+Changed `MKIOCCCENTRY_REPO_VERSION` from "2.3.9 2025-01-14"
+to "2.3.10 2025-01-16".
+
+Fixed `make all test; make test` failure.
+
+Added to list of forbidden files `GNUmakefile`. This involved an update to the
+`forbidden_filenames` array in `soup/entry_util.c` and making both `txzchk` and
+`mkiocccentry` use that array. This means that the `MKIOCCCENTRY_VERSION` was
+bumped again, making it `"1.2.1 2025-01-16"`. The `TXZCHK_VERSION` was updated
+to `"1.1.3 2025-01-16"`. The test JSON files were updated for both of these
+version updates. A new bad test file for txzchk was added along with its
+appropriate err file.
+
+Make `mkiocccentry_test.sh` test `-d` option (which uses `-s seed). Updated
+version of script to `"1.0.4 2025-01-16"`.
+
+Removed blank lines from `mkiocccentry.1` (they're not needed and some say it's
+incorrect).
+
+Make `mkiocccentry` random answers file prepend `http://example.com/` (and
+`https://example.com/` to the URLs. The emails probably should be `@example.com`
+too but that can be worried about another time.
+
+Changed `MANDATORY_FILE_COUNT` to `MANDATORY_SUBMISSION_FILES` to clarify
+the meaning of this value.  This value remains at 5.
+
+Added `OPTIONAL_SUBMISSION_FILES` to list the 2 files that are
+may be added without being counted an extra file.
+
+Added `MAX_EXTRA_FILE_COUNT` to give the maximum number of extra files
+for a submission.  This does **NOT** include mandatory files, nor does
+it include optional files a submission.  This value as been set to 31.
+
+Now `MAX_FILE_COUNT` refers to the maximum total file count, including
+mandatory files, optional files, and extra files for a submission.
+
+Added important comments to `soup/limit_ioccc.h` about
+both submission and winning entry mandatory and optional files.
+
+**NOTE**: The above file limits refer to submissions, not a winning entries
+as IOCCC judges are free to add additional files to a winning entry as needed.
+
+**NOTE**: As a result of the above, `MAX_FILE_COUNT` is 5+2+31 = 38,
+an increase from the effective file count limit of 42-5 = 37 when
+the mandatory file count was subtracted from MAX_FILE_COUNT in the code.
+
+
+## Release 2.3.9 2025-01-14
+
+Renamed `test_extra_file()` to better account for what it is:
+`test_extra_filename()`. Improved the function to use two `char *[]`s so that we
+don't have to have checks on each file manually in each tool that uses it,
+though at present only `chkentry(1)` uses it (it is not clear if any other tool
+can use it in the future but this update allows for more easily maintaining the
+list of filenames that must be present and that must not be present).
+
+
+
+## Release 2.3.8 2025-01-13
+
+Work done on new `mkiocccentry` options `-d` and `-s seed` (both will be
+documented when completed).
+
+Sync [jparse repo](https://github.com/xexyl/jparse/) to `jparse/` with new
+utility functions that act on directory paths. These functions are:
+
+- `dir_name()`: takes a path and strips off `level` components (i.e. `/`). In
+the case of successive `/`s it removes those as well. The comments at the top of
+the function explains in more detail the way the `level` works. This is modelled
+after the `base_name()` function which functions as the `basename(3)` function;
+`dir_name()` functions as `dirname(3)`.
+- `count_comps()`: counts in a string the number of components delimited by the
+component character (a `char`). Successive component characters are counted as
+one. The comments at the top of the function details specifics.
+- `count_dirs()`: using `count_comps()` (with component `/`), count the number
+of directory components in a path.
+
+Updated the jparse utility test code to test the new functions.
+
+Remove blacklisting of `inventory.html` file. This involved a new version of
+`mkiocccentry`, `txzchk` and `chkentry` as all of these tools prevented such
+files from existing.
+
+
+## Release 2.3.7 2025-01-12
+
+Removed `Makefile.example` as this file duplicates the contents of
+[Makefile.example from "the other repo"](https://github.com/ioccc-src/winner/blob/master/next/Makefile.example).
+
+
+## Release 2.3.6 2025-01-10
+
+Update regexp error message in mkiocccentry. (This was done in jparse too and
+that was synced from the jparse repo).
+
+Fix check in mkiocccentry (<= 0, not < 0).
+
+Minor bug fix in txzchk where errno was set to 0 after the function call.
+
+Updated txzchk and mkiocccentry version which required updating JSON files too.
+
+Slight update to GitHub issue template files to match the other one (and should
+look nicer in the subject line).
+
+
+
+## Release 2.3.5 2025-01-08
+
+Update `mkiocccentry_test.sh` to test the new subdirectory option of
+`mkiocccentry`, with the depth being valid and the depth being too high.
+
+Fix regexp in error message for basename of files according to how
+`sane_relative_path()` functions.
+
+Sync `jparse/` from [jparse repo](https://github.com/xexyl/jparse/) with a
+comment to `sane_relative_path()` (about regexp it enforces) and additional test
+cases to the util test code.
+
+Updated FAQ about how to use `mkiocccentry as well as the man page (with some
+details on how the mkiocccentry will copy directories now). The FAQ, guidelines
+and rules have to be updated in the winner repo and that'll come next unless
+something comes up here.
+
+## Release 2.3.4 2025-01-07
+
+Submission tarballs can now have subdirectories! This is a major release that
+will require updates to the guidelines, the rules and FAQ in the website (and
+this will be done soon). To get this to work a new jparse library release was
+also made, synced from the [jparse repo](https://github.com/xexyl/jparse/).
+There are other changes as well but the relevant ones are:
+
+New utility functions:
+
+```c
+extern enum path_sanity sane_relative_path(char const *str, uintmax_t max_path_len, uintmax_t max_filename_len,
+        uintmax_t max_depth);
+extern char const *path_sanity_name(enum path_sanity sanity);
+extern char const *path_sanity_error(enum path_sanity sanity);
+```
+
+which determine if a path is both relative and POSIX plus + safe, based on the
+maximum depth, maximum path length and the maximum length of each component. An
+enum was added:
+
+```c
+/*
+ * for the path sanity functions
+ */
+enum path_sanity {
+    PATH_ERR_UNKNOWN = -1,              /* unknown error code (default in switch) */
+    PATH_OK = 0,                        /* path (str) is a sane relative path */
+    PATH_ERR_PATH_IS_NULL,              /* path string (str) is NULL */
+    PATH_ERR_PATH_EMPTY,                /* path string (str) is 0 length (empty) */
+    PATH_ERR_PATH_TOO_LONG,             /* path (str) > max_path_len */
+    PATH_ERR_MAX_PATH_LEN_0,            /* max_path_len <= 0 */
+    PATH_ERR_MAX_DEPTH_0,               /* max_depth is <= 0 */
+    PATH_ERR_NOT_RELATIVE,              /* path (str) not relative (i.e. it starts with a '/') */
+    PATH_ERR_NAME_TOO_LONG,             /* path component > max_filename_len */
+    PATH_ERR_MAX_NAME_LEN_0,            /* max filename length <= 0 */
+    PATH_ERR_PATH_TOO_DEEP,             /* current depth > max_depth */
+    PATH_ERR_NOT_POSIX_SAFE             /* invalid/not sane path component */
+};
+```
+
+The new function `sane_relative_path()` returns one of those values depending on
+the condition (except that it won't return `PATH_ERR_UNKNOWN` as that is for the
+other two functions in the case one passes an invalid value). The function
+`path_sanity_name()` returns a read-only string of the enum value that matches
+the name (i.e. `"PATH_OK"` for `PATH_OK`). `path_sanity_error()` returns a
+simple message based on the value passed in although there is some room for
+improvement.
+
+The utility test code has many new cases that tests every condition of
+`sane_relative_path()`.
+
+Tools in this repo that were changed for this enhancement are `txzchk`,
+`mkiocccentry` and `chkentry`. To include a subdirectory in a submission tarball
+you may just specify the path and `mkiocccentry(1)` will do the right thing by
+using `-r` to `cp`.
+
+Maximum depth of 4 directories. Reduced size of max filename length (to 38, the
+length of UUIDs) and max path length of a file is 99.
+
+New test tarball files. Rebuilt error files.
+
+Changed `SOUP_VERSION` to `"1.1.4 2024-12-31"`.
+Changed `MKIOCCCENTRY_VERSION` to `"1.1.3 2025-01-07"`.
+Changed `TXZCHK_VERSION` to `"1.1.0 2025-01-07"`.
+Changed `CHKENTRY_VERSION` to `"1.0.4 2025-01-07"`.
+
+## Release 2.3.3 2025-01-04
+
+Added `soup/not_a_comment.sh` to test if file that exists
+contains a non-#-comment.
+
+Both `make prep` and `make release` will issue a notice (via
+`soup/not_a_comment.sh`) if a non-empty `Makefile.local` is found
+containing more than just comments.  This will allow for one to
+keep a `Makefile.local` with only comments in it, without raising
+a notice as such a file will not impact the make procedure.
+Then if one needs to temporary add comments (perhaps by uncommenting
+lines in a `Makefile.local` file), one can.  However if one then
+forgets, then the notice will alert you to the potential problem.
+
+Changed `test_ioccc/prep.sh` PREP_VERSION from "1.0.4 2024-11-16"
+to "1.0.5 2025-01-03".
+
+Changed `MKIOCCCENTRY_REPO_VERSION` from "2.3.1 2025-01-01"
+to "2.3.3 2025-01-04".
+
+Synced `jparse/` from [jparse repo](https://github.com/xexyl/jparse/) with the
+new script `not_a_comment.sh` which is now used in `jparse/test_jparse/prep.sh`
+as well. Thanks Landon! Doing this also uncovered a bug in
+`jparse/test_jparse/prep.sh`: namely that shellcheck failed due to the fact the
+script was missing from `jparse/test_jparse/Makefile` (this goes all the way
+back to the initial import of `jparse` as there was no `prep.sh` at the time!).
+
+
+## Release 2.3.2 2025-01-01
+
+Fix exit code errors in `jparse_test.sh`.
+
+Remove rule `rebuild_jparse_err_files` from top level Makefile. This rule should
+only be in jparse/. The reason it would cause a failure is because of `argv[0]`
+being in error messages and since in this repo `jparse` binary is in a
+subdirectory it changes the name of the program so the error files are
+incorrect. It might be possible to do a `cd jparse && ...` but this is not
+necessary as there are no error location files in this repo itself due to
+precisely this reason.
+
+Happy New Year!
+
+Disabled 2 invalid JSON string encode/decode tests.
+
+
 ## Release 2.3.1 2024-12-31
 
 Fix a minor issue relating to the invalid UUID error message.

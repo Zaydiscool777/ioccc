@@ -2,7 +2,8 @@
 #
 # test_ioccc - mkiocccentry test tools
 #
-# Copyright (c) 2022-2024 by Landon Curt Noll.  All Rights Reserved.
+# Copyright (c) 2021-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and
 # its documentation for any purpose and without fee is hereby granted,
@@ -14,18 +15,28 @@
 #       source works derived from this source
 #       binaries derived from this source or from derived source
 #
-# LANDON CURT NOLL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
-# EVENT SHALL LANDON CURT NOLL BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
-# USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-# OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
-# chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+# These tools were co-developed in 2021-2025 by Cody Boone Ferguson and Landon
+# Curt Noll:
+#
+#  @xexyl
+#	https://xexyl.net		Cody Boone Ferguson
+#	https://ioccc.xexyl.net
+# and:
+#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+#
+# "Because sometimes even the IOCCC Judges need some help." :-)
 #
 # Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 ####
+
 
 
 #############
@@ -51,6 +62,15 @@ SEQCEXIT= seqcexit
 SHELL= bash
 SHELLCHECK= shellcheck
 SORT= sort
+
+
+##########
+# locale #
+##########
+
+LC_ALL= C
+LANG= C
+LC_NUMERIC= C
 
 
 ####################
@@ -182,8 +202,8 @@ C_STD= -std=gnu17
 
 # optimization and debug level
 #
-C_OPT= -O3 -g3
-#C_OPT= -O0 -g
+C_OPT= -O3
+#C_OPT= -O0 -g3
 
 # Compiler warnings
 #
@@ -222,15 +242,15 @@ LESS_PICKY_HSRC=
 # all shell scripts
 #
 SH_FILES= chkentry_test.sh ioccc_test.sh iocccsize_test.sh mkiocccentry_test.sh txzchk_test.sh \
-	prep.sh hostchk.sh
+	prep.sh hostchk.sh gen_test_JSON.sh
 
 # all man pages that NOT built and NOT removed by make clobber
 #
 MAN1_PAGES= man/man1/fnamchk.1
 MAN3_PAGES=
-MAN8_PAGES= man/man8/chkentry_test.8 man/man8/ioccc_test.8 \
-	man/man8/iocccsize_test.8 man/man8/mkiocccentry_test.8 man/man8/txzchk_test.8 \
-	man/man8/hostchk.8 man/man8/ioccc_test.sh.8 man/man8/prep.8 man/man8/prep.sh.8 man/man8/utf8_test.8
+MAN8_PAGES= man/man8/chkentry_test.8 man/man8/ioccc_test.8 man/man8/iocccsize_test.8 \
+	    man/man8/mkiocccentry_test.8 man/man8/txzchk_test.8 man/man8/hostchk.8 \
+	    man/man8/prep.8 man/man8/utf8_test.8
 ALL_MAN_PAGES= ${MAN1_PAGES} ${MAN3_PAGES} ${MAN8_PAGES}
 
 
@@ -339,7 +359,7 @@ TARGETS= ${PROG_TARGETS} ${ALL_MAN_BUILT}
 # User specific configurations - override Makefile values  #
 ############################################################
 
-# The directive below retrieves any user specific configurations from makefile.local.
+# The directive below retrieves any user specific configurations from Makefile.local.
 #
 # The - before include means it's not an error if the file does not exist.
 #
@@ -386,7 +406,7 @@ ioccc_test.sh: ../dbg/dbg_test ../dyn_array/dyn_test
 fnamchk.o: fnamchk.c fnamchk.h
 	${CC} ${CFLAGS} fnamchk.c -c
 
-fnamchk: fnamchk.o ../jparse/libjparse.a ../dyn_array/libdyn_array.a ../dbg/libdbg.a
+fnamchk: fnamchk.o ../soup/soup.a ../jparse/libjparse.a ../dyn_array/libdyn_array.a ../dbg/libdbg.a
 	${CC} ${CFLAGS} $^ -o $@
 
 
@@ -419,7 +439,16 @@ fnamchk: fnamchk.o ../jparse/libjparse.a ../dyn_array/libdyn_array.a ../dbg/libd
 # repo tools - rules for those who maintain the this repo #
 ###########################################################
 
-test:
+test_JSON: ../soup/limit_ioccc.h ../soup/version.h
+	${S} echo
+	${S} echo "${OUR_NAME}: make $@ starting"
+	${S} echo
+	${E} ./gen_test_JSON.sh template.test_JSON test_JSON
+	${S} echo
+	${S} echo "${OUR_NAME}: make $@ ending"
+	${S} echo
+
+test: test_JSON
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ starting"
 	${S} echo
@@ -668,7 +697,8 @@ clobber: legacy_clobber clean
 	${E} ${RM} ${RM_V} -f test_ioccc.log chkentry_test.log txzchk_test.log
 	${E} ${RM} ${RM_V} -f Makefile.orig
 	${E} ${RM} ${RM_V} -f tags ${LOCAL_DIR_TAGS}
-	${E} ${RM} ${RM_V} -rf test_iocccsize test_src test_work
+	${E} ${RM} ${RM_V} -rf test_iocccsize topdir workdir test_JSON
+	${E} ${RM} ${RM_V} -rf slot/good/workdir slot/bad/workdir
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ ending"
 
@@ -692,12 +722,14 @@ uninstall:
 	${E} ${RM} ${RM_V} -f ${MAN1_DIR}/fnamchk.1
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/chkentry_test.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/ioccc_test.8
+	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/ioccc_test.sh.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/iocccsize_test.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/mkiocccentry_test.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/txzchk_test.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/hostchk.8
-	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/ioccc_test.sh.8
+	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/ioccc_test.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/prep.8
+	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/prep.sh.8
 	${E} ${RM} ${RM_V} -f ${MAN8_DIR}/utf8_test.8
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ ending"
@@ -759,9 +791,9 @@ fnamchk.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
     ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
     ../jparse/json_utf8.h ../jparse/json_util.h ../jparse/util.h \
     ../jparse/version.h ../soup/default_handle.h ../soup/limit_ioccc.h \
-    ../soup/version.h fnamchk.c fnamchk.h
+    ../soup/location.h ../soup/version.h fnamchk.c fnamchk.h
 utf8_test.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
     ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
     ../jparse/json_utf8.h ../jparse/json_util.h ../jparse/util.h \
     ../jparse/version.h ../soup/default_handle.h ../soup/limit_ioccc.h \
-    ../soup/version.h utf8_test.c
+    ../soup/location.h ../soup/version.h utf8_test.c

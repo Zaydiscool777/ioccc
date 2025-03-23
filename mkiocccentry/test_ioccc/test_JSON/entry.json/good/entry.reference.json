@@ -1,6 +1,8 @@
 {
     "no_comment" : "mandatory comment: because comments were removed from the original JSON spec",
-    "entry_JSON_format_version" : "1.2 2024-09-25",
+    "entry_JSON_format_version" : "2.0.3 2025-03-14
+2.0.3 2025-03-14
+1.2 2024-09-25",
     "award" : "IOCCC Judge",
     "year" : 2024,
     "dir" : "noll",
@@ -41,7 +43,7 @@
 	    "OK_to_edit" : false,
 	    "display_as" : "tbz2",
 	    "display_via_github" : false,
-	    "entry_text" : "download entry tarball"
+	    "entry_text" : "download entry tar bz2 file"
 	},
 	{
 	    "file_path" : ".entry.json",

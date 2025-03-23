@@ -2,7 +2,8 @@
 #
 # soup - some delicious IOCCC soup recipes :-)
 #
-# Copyright (c) 2022-2024 by Landon Curt Noll.  All Rights Reserved.
+# Copyright (c) 2021-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and
 # its documentation for any purpose and without fee is hereby granted,
@@ -14,17 +15,26 @@
 #       source works derived from this source
 #       binaries derived from this source or from derived source
 #
-# LANDON CURT NOLL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
-# EVENT SHALL LANDON CURT NOLL BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
-# USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-# OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
-# chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+# The recipes in this Makefile :-) and the tools in this directory were
+# co-developed in 2021-2025 by Cody Boone Ferguson and Landon Curt Noll:
+#
+#  @xexyl
+#	https://xexyl.net		Cody Boone Ferguson
+#	https://ioccc.xexyl.net
+# and:
+#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+#
+# "Because sometimes even the IOCCC Judges need some help." :-)
 #
 # Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 ####
 
 
@@ -57,6 +67,16 @@ SLEEP= sleep
 SORT= sort
 TOUCH= touch
 TR= tr
+
+
+##########
+# locale #
+##########
+
+LC_ALL= C
+LANG= C
+LC_NUMERIC= C
+
 
 ####################
 # Makefile control #
@@ -187,12 +207,12 @@ C_STD= -std=gnu17
 
 # optimization and debug level
 #
-C_OPT= -O3 -g3
-#C_OPT= -O0 -g
+C_OPT= -O3
+#C_OPT= -O0 -g3
 
 # Compiler warnings
 #
-WARN_FLAGS= -pedantic -Wall -Wextra -Wno-char-subscripts
+WARN_FLAGS= -pedantic -Wall -Wextra -Wno-char-subscripts -Wno-sign-conversion
 #WARN_FLAGS= -pedantic -Wall -Wextra -Werror
 
 # special compiler flags
@@ -214,27 +234,26 @@ CFLAGS= ${C_STD} ${C_OPT} ${WARN_FLAGS} ${C_SPECIAL} ${LDFLAGS}
 
 # source files that are permanent (not made, nor removed)
 #
-C_SRC= chk_sem_info.c chk_sem_auth.c chk_validate.c entry_util.c \
-	location_util.c location_main.c sanity.c rule_count.c
+C_SRC= chk_validate.c entry_util.c \
+	location_util.c location_main.c sanity.c rule_count.c random_answers.c
 H_SRC= chk_validate.h soup.h entry_util.h foo.h limit_ioccc.h location.h \
-	sanity.h default_handle.h version.h iocccsize_err.h
+	sanity.h default_handle.h version.h iocccsize_err.h random_answers.h
 
 # source files that do not conform to strict picky standards
 #
-LESS_PICKY_CSRC= default_handle.c foo.c location_tbl.c
+LESS_PICKY_CSRC= default_handle.c foo.c location_tbl.c chk_sem_info.c chk_sem_info.c chk_sem_auth.c 
 LESS_PICKY_HSRC= oebxergfB.h
 
 # all shell scripts
 #
-SH_FILES= all_sem_ref.sh run_usage.sh vermod.sh \
-	reset_tstamp.sh
+SH_FILES= all_sem_ref.sh reset_tstamp.sh not_a_comment.sh
 
 # all man pages that NOT built and NOT removed by make clobber
 #
-MAN1_PAGES= man/man1/bug_report.1 man/man1/bug_report.sh.1 man/man1/chkentry.1 man/man1/iocccsize.1 \
+MAN1_PAGES= man/man1/bug_report.1 man/man1/chkentry.1 man/man1/iocccsize.1 \
 	man/man1/mkiocccentry.1 man/man1/txzchk.1 man/man1/location.1
 MAN3_PAGES=
-MAN8_PAGES= man/man8/all_sem_ref.8 man/man8/reset_tstamp.8 man/man8/run_usage.8 man/man8/vermod.8
+MAN8_PAGES= man/man8/all_sem_ref.8 man/man8/reset_tstamp.8
 ALL_MAN_PAGES= ${MAN1_PAGES} ${MAN3_PAGES} ${MAN8_PAGES}
 
 
@@ -249,7 +268,8 @@ LOCAL_DIR_TAGS= .local.dir.tags
 # NOTE: ${LIB_OBJS} are objects to put into a library and removed by make clean
 #
 LIB_OBJS= chk_sem_info.o chk_sem_auth.o chk_validate.o entry_util.o \
-	location_tbl.o location_util.o sanity.o foo.o default_handle.o rule_count.o
+	location_tbl.o location_util.o sanity.o foo.o default_handle.o rule_count.o \
+	random_answers.o
 
 # NOTE: ${OTHER_OBJS} are objects NOT put into a library and removed by make clean
 #
@@ -303,7 +323,7 @@ EXTERN_H= chk_sem_info.h chk_sem_auth.h
 EXTERN_O=
 EXTERN_MAN= ${ALL_MAN_TARGETS}
 EXTERN_LIBA= soup.a
-EXTERN_PROG= run_usage.sh vermod.sh reset_tstamp.sh all_sem_ref.sh
+EXTERN_PROG= reset_tstamp.sh all_sem_ref.sh
 
 # NOTE: ${EXTERN_CLOBBER} used outside of this directory and removed by make clobber
 #
@@ -331,7 +351,7 @@ H_SRC_TARGETS=
 
 # shell targets to make by all and removed by clobber
 #
-SH_TARGETS= run_usage.sh vermod.sh reset_tstamp.sh all_sem_ref.sh
+SH_TARGETS= reset_tstamp.sh all_sem_ref.sh
 
 # program targets to make by all, installed by install, and removed by clobber
 #
@@ -350,7 +370,7 @@ TARGETS= ${LIBA_TARGETS} ${PROG_TARGETS} ${ALL_MAN_BUILT} limit_ioccc.sh
 # User specific configurations - override Makefile values  #
 ############################################################
 
-# The directive below retrieves any user specific configurations from makefile.local.
+# The directive below retrieves any user specific configurations from Makefile.local.
 #
 # The - before include means it's not an error if the file does not exist.
 #
@@ -477,10 +497,10 @@ kitchen soup_kitchen: kitchen.sh
 	${Q} ${MAKE} ${MAKE_CD_Q} -C ../jparse extern_prog
 
 ../test_ioccc/test_JSON/info.json/good/info.reference.json:
-	${Q} ${MAKE} ${MAKE_CD_Q} -C ../jparse test_ioccc/test_JSON/info.json/good/info.reference.json
+	${Q} ${MAKE} ${MAKE_CD_Q} -C ../test_ioccc test_JSON
 
 ../test_ioccc/test_JSON/auth.json/good/auth.reference.json:
-	${Q} ${MAKE} ${MAKE_CD_Q} -C ../jparse test_ioccc/test_JSON/auth.json/good/auth.reference.json
+	${Q} ${MAKE} ${MAKE_CD_Q} -C ../test_ioccc test_JSON
 
 
 ####################################
@@ -861,6 +881,7 @@ clobber: legacy_clobber clean
 	${E} ${RM} ${RM_V} -f .soup
 	${E} ${RM} ${RM_V} -f tags ${LOCAL_DIR_TAGS}
 	${E} ${RM} ${RM_V} -f .all_ref.*
+	${E} ${RM} ${RM_V} -f .jsemcgen.out.*
 	${E} ${RM} ${RM_V} -f Makefile.orig
 	${E} ${RM} ${RM_V} -f ${TARGETS}
 	${E} ${RM} ${RM_V} -rf ref
@@ -971,8 +992,8 @@ default_handle.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
 entry_util.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
     ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
     ../jparse/json_utf8.h ../jparse/json_util.h ../jparse/util.h \
-    ../jparse/version.h entry_util.c entry_util.h limit_ioccc.h location.h \
-    version.h
+    ../jparse/verge.h ../jparse/version.h entry_util.c entry_util.h \
+    limit_ioccc.h location.h version.h
 foo.o: ../dbg/dbg.h foo.c foo.h oebxergfB.h
 location_main.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
     ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
@@ -986,6 +1007,11 @@ location_util.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
     ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
     ../jparse/json_utf8.h ../jparse/json_util.h ../jparse/util.h \
     ../jparse/version.h location.h location_util.c
+random_answers.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \
+    ../jparse/jparse.tab.h ../jparse/json_parse.h ../jparse/json_sem.h \
+    ../jparse/json_utf8.h ../jparse/json_util.h ../jparse/util.h \
+    ../jparse/version.h default_handle.h limit_ioccc.h location.h \
+    random_answers.c random_answers.h version.h
 rule_count.o: ../dbg/dbg.h ../iocccsize.h iocccsize_err.h limit_ioccc.h \
     rule_count.c version.h
 sanity.o: ../dbg/dbg.h ../dyn_array/dyn_array.h ../jparse/jparse.h \

@@ -36,15 +36,15 @@
 #
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
+# Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 
 # setup
 #
 # Maintain this list towards the top of file, in sorted order.
 #
-# Do NOT put this tool (bug_report.sh) in the list, it will
-# cause an infinite loop.
-#
 export TOOLS="
+    ./bug_report.sh
     ./chkentry
     ./dbg/dbg_test
     ./dyn_array/dyn_test
@@ -65,9 +65,9 @@ export TOOLS="
     ./soup/all_sem_ref.sh
     ./soup/reset_tstamp.sh
     ./soup/run_usage.sh
-    ./soup/vermod.sh
     ./test_ioccc/chkentry_test.sh
     ./test_ioccc/fnamchk
+    ./test_ioccc/gen_test_JSON.sh
     ./test_ioccc/hostchk.sh
     ./test_ioccc/ioccc_test.sh
     ./test_ioccc/iocccsize_test.sh
@@ -78,7 +78,24 @@ export TOOLS="
     ./txzchk
     "
 
-# we need this to find overriding makefile.local in all directories to see if
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
+# we need this to find overriding Makefile.local in all directories to see if
 # the user is overriding any Makefile. As well, we check if the directory even
 # is searchable and has a Makefile.
 export SUBDIRS="
@@ -96,7 +113,7 @@ if [[ -z "$MAKE" ]]; then
 	MAKE="$(type -P make)"
 fi
 export MAKE
-export BUG_REPORT_VERSION="1.0.6 2024-12-31"
+export BUG_REPORT_VERSION="1.0.10 2025-03-14"
 export FAILURE_SUMMARY=
 export NOTICE_SUMMARY=
 export DBG_LEVEL="0"
@@ -1471,7 +1488,7 @@ if [[ -z "$T_FLAG" ]]; then
     # use of this repo so each time the script fails we report the issue for that
     # very reason.
     #
-    run_check 42 "$MAKE $MAKE_FLAGS all" # the answer to life, the universe and everything conveniently makes all :-)
+    run_check 42 "$MAKE $MAKE_FLAGS all" # the answer to Life, the Universe and Everything conveniently makes all :-)
 
     # make test: run the IOCCC toolkit test suite
     run_check 43 "$MAKE $MAKE_FLAGS test"
@@ -1681,51 +1698,51 @@ for d in $SUBDIRS; do
 done
 write_echo ""
 
-# check for makefile.local files to see if user is overriding any rules or variables.
+# check for Makefile.local files to see if user is overriding any rules or variables.
 #
 # NOTE: we don't use run_check for this because it's not an actual error whether
-# or not the user has a makefile.local file. What matters is the contents of it
+# or not the user has a Makefile.local file. What matters is the contents of it
 # if they do have one.
 #
-write_echo "## CHECKING IF \"makefile.local\" EXISTS"
-if [[ -e "./makefile.local" ]]; then
-    if [[ -r "./makefile.local" ]]; then
-	write_echo "### Warning: found \"Makefile\" overriding file \"makefile.local\":"
-	write_echo "cat ./makefile.local"
+write_echo "## CHECKING IF \"Makefile.local\" EXISTS"
+if [[ -e "./Makefile.local" ]]; then
+    if [[ -r "./Makefile.local" ]]; then
+	write_echo "### Warning: found \"Makefile\" overriding file \"Makefile.local\":"
+	write_echo "cat ./Makefile.local"
 	write_echo "--"
 	if [[ -z "$L_FLAG" ]]; then
-	    # tee -a -- "$LOGFILE" < makefile.local
-	    < makefile.local tee -a -- "$LOGFILE"
+	    # tee -a -- "$LOGFILE" < Makefile.local
+	    < Makefile.local tee -a -- "$LOGFILE"
 	else
-	    cat makefile.local >> "$LOGFILE"
+	    cat Makefile.local >> "$LOGFILE"
 	fi
 	write_echo "--"
     else
-	write_echo "### Warning: found unreadable \"makefile.local\""
+	write_echo "### Warning: found unreadable \"Makefile.local\""
     fi
 else
-    write_echo "# Makefile has no overriding \"makefile.local\""
+    write_echo "# Makefile has no overriding \"Makefile.local\""
 fi
 write_echo ""
 
 # now do the same for subdirectories
 for d in $SUBDIRS; do
-    if [[ -e "$d/makefile.local" ]]; then
-	if [[ -r "$d/makefile.local" ]]; then
-	    write_echo "### Warning: found \"$d/Makefile\" overriding file \"$d/makefile.local\":"
+    if [[ -e "$d/Makefile.local" ]]; then
+	if [[ -r "$d/Makefile.local" ]]; then
+	    write_echo "### Warning: found \"$d/Makefile\" overriding file \"$d/Makefile.local\":"
 	    write_echo "--"
 	    if [[ -z "$L_FLAG" ]]; then
-		# tee -a -- "$LOGFILE" < makefile.local
-		< "$d/makefile.local" tee -a -- "$LOGFILE"
+		# tee -a -- "$LOGFILE" < Makefile.local
+		< "$d/Makefile.local" tee -a -- "$LOGFILE"
 	    else
-		cat "$d/makefile.local" >> "$LOGFILE"
+		cat "$d/Makefile.local" >> "$LOGFILE"
 	    fi
 	    write_echo "--"
 	else
-	    write_echo "### Warning: found unreadable \"$d/makefile.local\""
+	    write_echo "### Warning: found unreadable \"$d/Makefile.local\""
 	fi
     else
-	write_echo "# \"$d/Makefile\" has no overriding \"$d/makefile.local\""
+	write_echo "# \"$d/Makefile\" has no overriding \"$d/Makefile.local\""
     fi
 done
 write_echo ""

@@ -3,9 +3,30 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -17,6 +38,8 @@
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
+
+
 /* special comments for the seqcexit tool */
 /* exit code out of numerical order - ignore in sequencing - ooo */
 /* exit code change of order - use new value in sequencing - coo */
@@ -24,6 +47,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <locale.h>
 
 /*
  * jparse_main - tool that parses a block of JSON input
@@ -46,7 +70,7 @@ static const char * const usage_msg =
     "\t-v level\tset verbosity level (def level: %d)\n"
     "\t-J level\tset JSON verbosity level (def level: %d)\n"
     "\t-q\t\tquiet mode: silence msg(), warn(), warnp() if -v 0 (def: loud :-) )\n"
-    "\t-V\t\tprint version string and exit\n"
+    "\t-V\t\tprint version strings and exit\n"
     "\t-s\t\targ is a string (def: arg is a filename)\n"
     "\n"
     "\targ\t\tparse JSON for string (if -s), file (w/o -s), or stdin (if arg is -)\n"
@@ -54,11 +78,12 @@ static const char * const usage_msg =
     "Exit codes:\n"
     "    0\tJSON is valid\n"
     "    1\tJSON is invalid\n"
-    "    2\t-h and help string printed or -V and version string printed\n"
+    "    2\t-h and help string printed or -V and version strings printed\n"
     "    3\tcommand line error\n"
     "    >=4\tinternal error\n"
     "\n"
     "%s version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -79,6 +104,11 @@ main(int argc, char **argv)
     struct json *tree = NULL;	    /* JSON parse tree or NULL */
     int arg_count = 0;		    /* number of args to process */
     int i;
+
+    /*
+     * use default locale based on LANG
+     */
+    (void) setlocale(LC_ALL, "");
 
     /*
      * parse args
@@ -113,8 +143,9 @@ main(int argc, char **argv)
 	case 'q':
 	    msg_warn_silent = true;
 	    break;
-	case 'V':		/* -V - print version and exit */
-	    print("%s version: %s\n", JPARSE_BASENAME, JPARSE_VERSION);
+	case 'V':		/* -V - print version strings and exit */
+	    print("%s version: %s\n", JPARSE_BASENAME, JPARSE_TOOL_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -225,7 +256,8 @@ usage(int exitcode, char const *prog, char const *str)
 	fprintf_usage(DO_NOT_EXIT, stderr, "%s\n", str);
     }
     fprintf_usage(exitcode, stderr, usage_msg, prog,
-		  DBG_DEFAULT, JSON_DBG_DEFAULT, JPARSE_BASENAME, JPARSE_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+		  DBG_DEFAULT, JSON_DBG_DEFAULT, JPARSE_BASENAME, JPARSE_TOOL_VERSION, JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION,
+                  JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

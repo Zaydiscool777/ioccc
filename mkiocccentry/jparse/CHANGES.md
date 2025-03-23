@@ -1,5 +1,1064 @@
 # Significant changes in the JSON parser repo
 
+
+## Release 2.2.38 2025-03-15
+
+Add `setlocale(LC_ALL, "");` to all `main()` functions.
+
+After a discussion and review now early on in every `main()` we do a
+`setlocale(LC_ALL, "");` so that the default locale (in the system) based on
+`LANG` will be used.
+
+NOTE: this is not done in the library for very good reasons.
+
+Updated `JSEMTBLGEN_VERSION` to `"2.0.1 2025-03-15"`.
+Updated `JSTRDECODE_VERSION` to `"2.2.2 2025-03-15"`.
+Updated `JSTRENCODE_VERSION` to `"2.2.2 2025-03-15"`.
+Updated `JNUM_CHK_VERSION` to `"2.0.1 2025-03-15"`.
+Updated `JNUM_GEN_VERSION` to `"2.0.1 2025-03-15"`.
+Updated `PR_JPARSE_TEST_VERSION` to `"2.0.1 2025-03-15"`.
+Updated `UTIL_TEST_VERSION` to `"2.0.3 2025-03-15"`.
+Updated `VERGE_VERSION` to `"2.0.2 2025-03-15"`.
+Updated `JPARSE_TOOL_VERSION` to `"2.0.1 2025-03-15"`.
+
+Undo the variable swap (`< 0` check) in `sum_and_count()` and add a comment
+about it so that when we don't stupidly change it again.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.8 2025-03-15"`.
+
+
+## Release 2.2.37 2025-03-14
+
+Add man pages for `json_tree_walk()` and `vjson_tree_walk()` (symlinked to
+`jparse.3` which is under `man/man3`). The `jparse.3` has been updated to have
+these two functions.
+
+Changed the macro `JPARSE_VERSION` to `JPARSE_TOOL_VERSION` and the string
+`jparse_version` to `jparse_tool_version` to better reflect that it's the tool
+`jparse(1)` version, not something else.
+
+Don't use `setlocale(3)` in `jstrencode(1)` or `jstrdecode(3)`.
+
+Updated `JSTRENCODE_VERSION` to `"2.2.1 2025-03-15"` (yes that was a typo).
+Updated `JSTRDECODE_VERSION` to `"2.2.1 2025-03-14"`.
+
+Typo fix in at least one place.
+
+In places (in `json_util.c`) where the debug output can be confusing a link to
+the jparse library README.md file is now in a comment, although for
+`json_string` it is not so much about the debug output as the struct itself.
+
+Fix bad bug in `sum_and_count()` - wrong value checked for < 0.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.7 2025-03-14"`.
+
+## Release 2.2.36 2025-03-11
+
+Fix bugs in `resolve_path()`. If one had the path of `./foo` or even `/foo` then
+it should check that the path is a regular executable file. And if not it should
+return NULL. Otherwise it should return the path. Then, if the path is not a
+regular executable file and `$PATH` is empty it should return NULL, not a
+strdup()d copy of the path. This way the caller can know for sure that the path
+returned is in fact a regular executable file.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.6 2025-03-11"`.
+
+
+## Release 2.2.35 2025-03-10
+
+Improved `shell_cmd()` and `pipe_open()` to resolve path (using `resolve_path()`
+which searches `$PATH`) if there is no `/` in the command.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.5 2025-03-10"`.
+
+
+## Release 2.2.34 2025-03-09
+
+Updated `base_name()`, `dir_name()` and added new function `resolve_path()`.
+
+The function `base_name()` now will, on a NULL or empty string, return a copy of
+`"."` just like `basename(3)` does.
+
+The function `dir_name()` now will, on a NULL or empty string or a string that
+has no `/` (unless `level < 0`) , return a copy of `"."` just like `dirname(3)`
+(though that function does not have the `level` functionality).
+
+The function `resolve_path()` will go through the process's `$PATH` and search
+for an executable file with the name passed to the function, returning either a
+copy of the path or NULL. If the command starts with `/` or `./` then the
+`$PATH` is not searched and instead that exact string is duplicated and
+returned.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.4 2025-03-09"`.
+Updated `UTIL_TEST_VERSION` to `"2.0.2 2025-03-09"`.
+
+
+## Release 2.2.33 2025-03-07
+
+Additional sanity checks added to FTS code.
+
+The `read_fts()` function now does not just skip on NULL or empty path name; it
+will abort just like `check_fts_info()` does (though that would never have been
+reached as we skipped that item and moved to the next). If there is a NULL
+pointer or an empty string something is wrong and it's better to abort early.
+
+Also in `check_fts_info()` when the `fts_info == FTS_NS` the `ent->fts_errno` is
+the errno so we set `errno = ent->fts_errno` prior to calling `errp()` (instead
+of `err()`).
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.3 2025-03-07"`.
+
+Moved `main()` in `verge.c` to `verge_main.c` and added function `vercmp()`
+which does the work of what `verge` does. The `verge.o` is now linked into the
+library and `verge.h` is installed with `make install`. This was necessary for
+mkiocccentry.
+
+Updated `VERGE_VERSION` to `"2.0.1 2025-03-07"`.
+
+
+## Release 2.2.32 2025-03-02
+
+Updated `filemode()` with new boolean (sorry!) to mask `S_IFMT` if true. In
+other words if you want to print out the value it returns the `st_mode &
+~S_IFMT` (otherwise it still determines the file type and masks the correct
+bits).
+
+Since enums have different namespaces than function names the function
+`type_of_file()` was renamed `file_type()`.
+
+Also, `is_mode()` now uses the function (that did not exist at the time of
+original writing) `file_type()` rather than repeatedly having to use `lstat(2)`
+and `stat(2)` on the path.
+
+Fun fact: the release version, `2.2.32`, with the exception of the year in the
+date and the zeros (i.e. the `5` and zeroes in `2025-03-02`), has only the same
+digits as the date, `2025-03-02` (i.e. `2` and `3`).
+
+Fix bug in `read_fts()` with checking basename versus full path. In particular
+if the number of directories is just one then it has to be a basename check.
+Thus it's `(fts->base || count_dirs(name) == 1) && ...`. If it's not base or the
+`count_dirs(name) != 1` then it tries the other way (with `fts->base == false`).
+This solves a problem where files to be ignored were not ignored in the case of
+base being false (when we needed that to be the case).
+
+Save and restore errno prior to returning from `pipe_open()` and `shell_cmd()`.
+In some systems `popen(3)` are not reliable with errno (like macOS) but in linux
+it CAN in some cases set errno. For `system(3)` it does no seem to set errno at
+all but we still do this process especially as it also uses a function that can
+have errno (and we return from the function in that case with an error).
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.2 2025-03-02"`.
+Updated `UTIL_TEST_VERSION` to `"2.0.1 2025-03-02"`.
+
+
+## Release 2.2.31 2025-03-01
+
+Fix critical bug in `copyfile()`: obtaining the FD of the source file should not
+have the flag `O_WRONLY` but rather `O_RDONLY`.
+
+Updated `JPARSE_UTILS_VERSION` to `"2.0.1 2025-03-01"`.
+
+
+## Release 2.2.30 2025-02-28
+
+Add util function that uses `file_size()` called `is_empty()`.
+
+Updated all tools by changing `x.y.z` to `x.y+1.0` except that for those under <
+`2.0.0` they have been changed to `2.0.0`.
+
+Add copyright message to all source (code, header, scripts) and Makefiles.
+
+Fix enum `FTS_TYPE_ANY` - add missing `FTS_TYPE_FIFO`.
+
+
+## Release 2.2.29 2025-02-27
+
+The script `jparse_bug_report.sh` actually can have the script in the `TOOLS`
+variable as it will not actually cause an infinite loop as it only gets the
+version of the tool - which is quite useful to know that the user is using the
+most recent version of the script.
+
+
+## Release 2.2.28 2025-02-26
+
+Finish 'depth' check concept in `struct fts`.
+
+Add to `struct fts` a `min_depth` and `max_depth` to complete the concept of the
+depth checks. This will only be used if depth <= 0 and only was added because in
+some cases it can be useful, kind of like `find -mindepth` and `find -maxdepth`
+can be (although there are slightly different semantics as we only want to have
+the checks if > 0 and if depth == 0 too). If someone supplies a bogus range, for
+instance a `min_depth > max_depth` then they will not get anything because what
+they asked cannot be fulfilled. The util test code tests this.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.25 2025-02-26"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.23 2025-02-26"`.
+
+
+## Release 2.2.27 2025-02-24
+
+Enhance and make more sane the FTS functions even more.
+
+The `struct fts` now holds a `struct dyn_array *ignore` list of paths to ignore.
+The function `read_fts()` checks for ignored paths and if one is encountered it
+is skipped. This uses the same logic as that of `find_path()` and `find_paths()`
+when looking for matches of filenames (not to be ignored).
+
+The `read_fts()` function handles the ignored files based on the booleans (in
+the `struct fts`) `base` and `match_case` (in the `struct fts`).
+
+The `read_fts()` function now checks the depth (instead of the `find_path()` and
+`find_paths()` functions that use it).
+
+In order to make the `reset_fts()` function saner it now requires another arg
+and one also should `memset()` it to 0 prior to calling `reset_fts()`. Doing
+this (with the new `bool` in `struct fts` called `initialised`) allows one to
+close the stream if it's not NULL (say because they used `read_fts()` without
+finishing the loop, leaving the stream in a bad state). It also allows to check
+the ignored list - deciding to free it or not based on the new bool
+(`free_ignored`). Having these updates is a trade-off (having to now use
+`memset(3)` prior to calling `reset_fts()` for the first time) but one that is
+worth it and good practice anyway.
+
+Fixed some comments in the functions (or above them) and removed some duplicate
+comments as well.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.24 2025-02-24"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.21 2025-02-24"`.
+
+## Release 2.2.26 2025-02-23
+
+Updated `jsemtblgen.c` for recent change to `json_sem.[ch]`.
+
+Internal improvement to `find_path()` and `find_paths()` functions: don't
+repeatedly call `lstat(2)`/`stat(2)` per file for the `FTS_DEFAULT`
+case: instead use the function `type_of_file()` once which will at most
+call `lstat(2)` once and if that is not used it will call `stat(2)` once. We
+can then check the file type as a simple comparison.
+
+Updated `JSEMTBLGEN_VERSION` to `"1.2.2 2025-02-23"`.
+Updated `JPARSE_UTILS_VERSION` to `"1.0.23 2025-02-23"`.
+
+## Release 2.2.25 2025-02-22
+
+Significantly simplify use of FTS functions.
+
+Refactored the functions `read_fts()`, `find_path()`, `find_paths()` and added
+helper function `reset_fts()` (which takes a `struct fts *`). A **significant**
+amount of thought was put into this to make these much more useful and easier to
+use. The real gain of this, besides more modularity, is that it will not force
+users to update function calls if something has to change (with more use cases a
+problem could be discovered, for example). The number of arguments is
+**significantly** reduced.
+
+With the function `reset_fts()` one can reuse the same structure if they need to
+(it also allows one to simply initialise things to a sane value prior to using
+the functions). This does set the tree (`fts->tree`) to NULL which means that if
+one is using `read_fts()` and does not finish the `do..while` loop (thus the
+stream is not closed) then they must use `fts_close()` on the stream before
+`reset_fts()` as otherwise the stream will be lost. It was done this way quite
+deliberately: the function cannot safely check for not NULL and it is a burden
+to force the user to set the stream to NULL (the struct does not need to be
+allocated on the stack although one could if they wanted to). The `find_path()`
+and `find_paths()` functions do take care of this, whether or not they finish
+the loop.
+
+Made it possible to not get the absolute path of a found path in `find_paths()`
+even if `dir == NULL && dirfd < 0` (new boolean) (in fact the `dir` and `dirfd`
+now play no part in this). The absolute path code was also fixed by now
+obtaining it AFTER the first call to `read_fts()`. Previously it did it before
+which means that if `dir` was not NULL or `dirfd` was >=0 and either
+`chdir(dir)` or `fchdir(dirfd)` succeeded the path could be very wrong. As we
+only need the absolute path temporarily the variable is freed prior to
+returning.
+
+The `read_fts()` function is now simply:
+
+```c
+FTSENT *read_fts(char *dir, int dirfd, int *cwd, struct fts *fts);
+```
+
+The args `dir`, `dirfd` and `cwd` are the same. The new arg `fts` is a pointer
+to a new struct `fts` (see util.h) which has everything that the older versions
+had but as args to the functions.
+
+The function `find_path()` is now simply:
+
+```c
+char *find_path(char const *path, char *dir, int dirfd, int *cwd, bool abspath,
+    struct fts *fts);
+```
+
+(It now returns a `char *` not a `char const *` as it should always have done
+due to the fact one should free the returned value when they're done with it.)
+
+The args are the same as before with the addition of the `bool abspath`. The
+function still uses the `read_fts()` function; some of the `struct fts` is used
+there and the rest in the `find_path()` function itself.
+
+The function `find_paths()` is now simply:
+
+```c
+struct dyn_array *find_paths(struct dyn_array *paths, char *dir, int dirfd, int *cwd,
+    bool abspath, struct fts *fts);
+```
+
+The args `dir`, `dirfd` and `cwd` are what they used to be. The new struct has
+all the parameters that used to be args (just like the other two functions). The
+boolean `abspath` functions like in `find_path()` (see note below on when the
+absolute path is obtained, below). The same rule about which function uses which
+members in the `struct fts` applies to this function too, just like with
+`find_path()`.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.22 2025-02-22"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.20 2025-02-22"`.
+
+
+## Release 2.2.24 2025-02-21
+
+Update and add utils.
+
+Yes I am afraid that more things were thought of, particularly when using some
+of the functions. Unfortunately making the assumption of using `strcmp()` or
+`strcasecmp()` when looking for files is wrong as some file systems (like the
+default here - macOS) are case insensitive and sometimes one might or might not
+want to have better control (like the use case). Thus the functions ought to
+have an option to specify if you want to make a case-sensitive or
+case-insensitive search (if the boolean is false it means case insensitive).
+This applies to `find_path()`, `find_path_in_array()`, `find_paths()`,
+`append_path()` and the new function `array_has_path()` (which takes a `intmax_t
+*` which if not NULL will be set to either `-1` or the index in the array). Yes
+the `find_path*()` functions have **way too many** args and it would be good if
+they can be refactored but that will have to happen another time.
+
+As I needed an easier way to test the above searching I added the functions
+`touch()` and `touchat()` which are analogous to the `touch(1)` command (except
+it does not do anything if the file does already exists) and `openat(2)`. That
+means that `touchat(2)` uses `touch()` which uses `open(2)` with the flag
+`O_CREAT`. Importantly it is not like `creat(2)` which will truncate the file if
+it already exists. It takes a `mode_t mode` to set the mode.
+
+Updated .gitignore with some paths that the test code makes or copies (and now
+`make clobber` also removes those).
+
+New function `paths_in_array()` which counts the number of paths in the array
+(if not NULL) - i.e. it uses `dyn_array_tell()` but only if not NULL; if the
+array is NULL it simply returns 0.
+
+Added `data` (a `void *`) to struct `json_sem` and `json_sem_check()`. This may
+be NULL so it is the responsibility of the user to check this before using it.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.21 2025-02-21"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.19 2025-02-21"`.
+
+
+## Release 2.2.23 2025-02-20
+
+New util function to find a path in an array.
+
+This new function is `find_path_in_array()` which will attempt to find a path in
+a `struct dyn_array *` (presumably of paths). If `idx` (an `intmax_t *`) is not
+NULL we first set `*idx` to `-1` and then if the path is found `*idx` will be
+set to the index. The boolean `empty` allows for empty paths to match (if the
+path and the path in the paths array are both empty and was added due to the
+fact that `append_path()` also uses it and that is a special feature of the
+`find_path*()` functions). The new function will be used elsewhere. (Yes we do
+realise that a lot of the functions in util.c are not related to JSON parsing
+but there are historical reasons for this.)
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.20 2025-02-20"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.18 2025-02-20"`.
+
+
+## Release 2.2.22 2025-02-19
+
+Fix bug in `dir_name()` with `level < 0` with many test cases added to the test
+code.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.19 2025-02-19"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.17 2025-02-19"`.
+
+
+## Release 2.2.21 2025-02-18
+
+Enhance (w/o changing args) `find_path*()` functions.
+
+The enum `fts_type` now has the any type `FTS_TYPE_ANY` as not as 0 but the
+bitwise OR of all the others so that (for example) if you want to get all types
+except directories you could do `FTS_TYPE_ANY &
+~FTS_TYPE_DIR` or so (this is done in the test code).
+
+Added helper macros for setting/testing bits. In the case of the above example
+that won't be helpful but since multiple places in the code now require removing
+and setting bits it is useful.
+
+Added new function `type_of_file()` which will return an enum (`file_type`)
+based on the type of file (if `errno == ENOENT` it will be `FILE_TYPE_ENOENT`
+and if errno is something else it will just be `FILE_TYPE_ERR`, otherwise it'll
+be the type of file according to `lstat(2)` - and if not a symlink, `stat(2)`).
+
+As a helpful feature of the `find_path*()` functions: if `dir == NULL` and
+`dirfd < 0` it will return the absolute paths instead of the relative path. It
+is possible that this should be done in all cases but that is TBD another time.
+
+A bug was uncovered in a function and a `FIXME` was put in there. It will be
+looked at soonish.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.18 2025-02-18"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.16 2025-02-18"`.
+
+
+## Release 2.2.20 2025-02-17
+
+A couple fixes and further enhancements with `find_path*()` functions. More use
+cases have come to mind and the function arg ordering now matches `read_fts()`
+to make it slightly less confusing (though there are still too many args they're
+necessary).
+
+It is now possible to specify file type in the `find_path*()` functions. There
+is a new enum `fts_type`. This enum is composed of bits so one can OR them
+together if they want more than one kind of file. The test code looks for some
+of these and it is an error if there ARE any of them.
+
+The enum is as follows:
+
+```c
+/*
+ * enum for the find_path() functions (bits to be ORed)
+ */
+enum fts_type
+{
+    FTS_TYPE_ANY        = 0,        /* all types of files allowed */
+    FTS_TYPE_FILE       = 1,        /* regular files type allowed */
+    FTS_TYPE_DIR        = 2,        /* directories allowed */
+    FTS_TYPE_SYMLINK    = 4,        /* symlinks allowed */
+    FTS_TYPE_SOCK       = 8,        /* sockets allowed */
+    FTS_TYPE_CHAR       = 16,       /* character devices allowed */
+    FTS_TYPE_BLOCK      = 32,       /* block devices allowed */
+    FTS_TYPE_FIFO       = 64        /* FIFO allowed */
+};
+```
+
+The new function prototypes are:
+
+```c
+FTSENT *read_fts(char *dir, int dirfd, int *cwd, int options, bool logical, FTS **fts,
+        int (*cmp)(const FTSENT **, const FTSENT **), bool(*check)(FTS *, FTSENT *));
+
+char const *find_path(char const *path, char *dir, int dirfd, int *cwd,
+        int options, bool logical, enum fts_type type, int count, int depth,
+        bool base, bool seedot, int (*cmp)(const FTSENT **, const FTSENT **),
+        bool(*check)(FTS *, FTSENT *));
+
+struct dyn_array *find_paths(struct dyn_array *paths, char *dir, int dirfd, int *cwd,
+        int options, bool logical, enum fts_type type, int count, int depth,
+        bool base, bool seedot, int (*cmp)(const FTSENT **, const FTSENT **),
+        bool(*check)(FTS *, FTSENT *));
+```
+
+The `dir` was changed to a `char *` from a `char const *`. This is not needed
+now but there was an enhancement in mind that there is no time to do right now
+(and it does not hurt to have it non-const so it's okay to keep it this way for
+now). The reason for the reordering (in addition to the new parameter) is to
+make it match the order in `read_fts()` a bit better.
+
+If one wanted to only find directories of a given name, they would just use
+`FTS_TYPE_DIR`. But if files and directories are okay they would do
+`FTS_TYPE_DIR|FTS_TYPE_FILE` (for example). If any type is okay they can do
+`FTS_TYPE_ANY`.
+
+The functions (when checking the type) now also refer to `FTS_DP` for the case
+that `FTS_LOGICAL` is used (though it should be seen with `FTS_D` anyway).
+
+A new feature of the `find_path*()` functions is that if the string to find is
+an empty string (i.e. `*str == '\0'`) it will find any file. This is useful if
+you just need to get an entire listing (and if you need to restrict it to
+specific types you can use a type other than `FTS_TYPE_ANY`).
+
+Soon these functions should be in better use so it will be known if anything
+else has to be changed but that (at this time) seems unlikely (despite the fact
+there have been multiple enhancements already).
+
+There is a new function which simplifies the `find_paths()` function (and use of
+it) as well:
+
+```c
+void free_paths_array(struct dyn_array **paths, bool only_empty);
+```
+
+The `only_empty` boolean is useful because it is now possible to exit the loop
+early (making sure of course to close the FTS stream and setting it to NULL) and
+still return a valid array. This was actually used in more than one location in
+the function but it now is only used at the end (if one needed to add a way to
+exit early it would now allow not duplicating code). It is also used to make the
+test code simpler. It takes a `struct dyn_array **` so that we can set it to
+NULL in the caller (if needed). This makes it a lot easier. Functionally it can
+be used with any `dyn_array` of `char *` but it is named `free_paths_array()` as
+it is far more likely that there is a `free_array()` function than
+`free_paths_array()`.
+
+Relax the error to a warning if an invalid FD is passed to `read_fts()` (when
+trying to close it, that is).
+
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.12 2025-02-17"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.15 2025-02-17"`.
+
+
+## Release 2.2.19 2025-02-16
+
+Improve and bug fix various util functions.
+
+Set `FTS_SKIP` on `FTS_DC` instead of using `err()`.
+Set `FTS_SKIP` on `FTS_DNR` instead of using `err()`.
+
+The above two (as well as the check for `FTS_ERR` and `FTS_NS`, both of which
+are errors) are done in the new function (a callback that can be passed to the
+three functions `read_fts()`, `find_path()` and `find_paths()` - if NULL it
+defaults to the `check_fts_info()`). This was made a callback as some users
+might have a different requirement (for instance the IOCCC requires that only
+files and directories are allowed so `FTS_DEFAULT` is forbidden). If (in
+`read_fts()`) this function returns false the next entry is read (if there is
+one, else it'll return NULL like before).
+
+Besides the new function pointer, there is another arg (sorry, tm Canada 🇨 :-) )
+to the functions `read_fts()`, `find_path()` and `find_paths()` which fixes a
+problem. The `fts_open()` needs either `FTS_PHYSICAL` or `FTS_LOGICAL`.  This
+new boolean is `logical`: if logical (i.e. dereference/follow a symlink, meaning
+act on the file it points to) is true then `FTS_LOGICAL` is set; otherwise
+`FTS_PHYSICAL` is set and the `FTSENT *` will refer to the symlink itself. An
+important point is that if `FTS_LOGICAL` is not set `fts_read()` will NOT detect
+broken symlinks (this is how I discovered the problem); instead it'll just call
+it a symlink. If you pass in `FTS_PHYSICAL` and/or `FTS_LOGICAL` to the options
+in the functions it (or they) will be unset prior to setting the correct one.
+The requirement that `FTS_NOCHDIR` still be in place is also there.
+
+A word about yesterday's update on why we UNSET `FTS_NOSTAT`. IF this flag IS
+set it makes the `fts_info` always be `FTS_NSOK` which means that we cannot
+determine the file type! This would make the `read_path()` functions always
+return NULL and it would also be useless for `read_fts()` too (in almost all
+cases).
+
+The new function `check_fts_info()` is:
+
+```c
+bool check_fts_info(FTS *fts, FTSENT *ent);
+```
+
+and you can use it (in a call to `read_fts()`) like:
+
+```c
+
+ent = read_fts("test_jparse", -1, &cwd, -1, &fts, fts_cmp, fn, true);
+```
+
+where `fn` is your function. Alternatively if you do:
+
+```c
+ent = read_fts("test_jparse", -1, &cwd, -1, &fts, fts_cmp, NULL, true);
+```
+
+The function `check_fts_info()` (as noted above) does certain checks on the
+`fts_info` but even so the `read_fts()` function does the checks afterwards, in
+case you override it and do not provide the right checks.
+
+The util test code now checks paths that are non-existent (or should not exist
+anyway).
+
+The util test code now checks that `FTS_NOSTAT` is indeed unset.
+
+Another new function, `fts_path()`, takes an `FTSENT *` and determines what should be
+used for `fts_path` (it depends on the length of the string). This removes the
+need of always calculating an offset; instead of that just use `fts_path(ent);`
+(obviously you can assign it to a `char *`).
+
+It is hoped that these functions should not have to change again but as the
+functions are being used more is discovered in what is necessary. Thus there
+might be another update or two. In the end these should be very useful
+functions (though some might question why this is in jparse - and the answer is
+related to the IOCCC and out of the scope of this changelog).
+
+There was a bug fix in `is_symlink()`: by an oversight it used `stat(2)` instead
+of `lstat(2)`.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.11 2025-02-16"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.14 2025-02-16"`.
+
+## Release 2.2.18 2025-02-15
+
+Renamed and improved the `find_file*()` functions to `find_path*()` (i.e.
+`find_path()` and `find_paths()`).
+
+The functions now allow you to collect path name(s) of regular files,
+directories, symlinks and others that match `FTS_DEFAULT` rather than just
+files.
+
+The functions also have a new boolean which is an analogue to the `FTS_SEEDOT`
+flag to `fts_open()`: if it's true and the files are `.` or `..` then it will
+not be skipped; otherwise if it's false they will be (we search with a
+`path_argv` of `"."` so they are seen even without the `FTS_SEEDOT` option).
+
+There was a fix with the references to `fts_path` (in particular `fts_path + 2`)
+as not all path names are long enough. The function `append_path()` was renamed
+from `append_filename()` (this is where the problem was originally discovered).
+
+Additionally the functions (the two and also `read_fts()`) now remove the option
+`FTS_NOSTAT` as this is problematic to not have `stat(2)`.
+
+The `util_test` now adds to the list of paths a couple directories.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.10 2025-02-15"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.13 2025-02-15"`.
+
+
+## Release 2.2.17 2025-02-14
+
+Make a new function like `find_file()` but which is more useful: it is now
+possible to find a list of files (names in a `struct dyn_array` of `char *`s).
+The function is `find_files()` and it is almost exactly the same as
+`find_file()` but the `filename` arg is a `struct dyn_array *filename` and it
+returns a newly allocated `struct dyn_array *`.
+
+The other function is `append_filename()` which is used by `find_files()` and
+can also be used to set up the function (i.e. to create the filenames array). It
+takes a `struct dyn_array **` and if `*array` is NULL it allocates a new array
+(if `array` is NULL it is an error); otherwise it will append to the array
+that's already (hopefully) created. If it makes a new array it will use the
+chunk size of 64. It also takes two bools: `unique` which means don't add the
+filename if it's already in the array and `duped` which means that the string
+was dynamically allocated (if it's false it will be `strdup()`d first).
+
+Fix memory error in `find_file()`: return a `strdup()`d copy of the FTS entry
+rather than the entry itself as once the function closes the stream prior to
+returning.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.9 2025-02-14"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.12 2025-02-14"`.
+
+
+## Release 2.2.16 2025-02-13
+
+New util function `read_fts()` which allows one to use `fts_open()` and
+`fts_read()` in a 're-entrant' way (not strictly true: one always has to pass to
+`fts_read()` the `FTS *`) an more importantly allowing one to not have to rely
+on using `fts_open()`, checking for NULL, then in a loop using `fts_read()` etc.
+The args are as follows:
+
+```c
+ /*
+ *  dir     -   char * which is the path to chdir(2) to before opening path but
+ *              only if != NULL && *fts == NULL
+ *  dirfd   -   if dir == NULL and dirfd > 0, fchdir(2) to it, else don't change
+ *              at all
+ *  cwd     -   if != NULL set *cwd PRIOR to chdir(dir)
+ *  options -   options to pass to fts_open()
+ *  fts     -   pointer to pointer to FTS to set to return value of fts_open()
+ *  compar  -   if != NULL use it for the compar() function in fts_open(), else
+ *              use fts_cmp() (see also fts_rcmp())
+ */
+```
+
+One can use the function like:
+
+```c
+    FTS *fts = NULL;                    /* FTS stream for fts_open() */
+    FTSENT *ent = NULL;                 /* FTSENT for each item from read_fts() */
+
+    ent = read_fts(NULL, -1, NULL, FTS_NOCHDIR | FTS_PHYSICAL, &fts, fts_cmp);
+    if (ent == NULL) {
+        /* handle error */
+    }  else {
+        do {
+            /* do stuff per entry */
+        } while ((ent = read_fts(NULL, -1, NULL, FTS_NOCHDIR | FTS_PHYSICAL, &fts, fts_cmp) != NULL);
+    }
+```
+
+or so, san typos.
+
+As a useful feature if you call `fts_read()` like:
+
+```c
+read_fts(NULL, -1, &cwd, -1, NULL, NULL);
+```
+
+and `*cwd` (an `int`) is `>= 0` it'll try doing `fchdir(*cwd)` to restore the
+directory to where it started, in case a change happened (as is quite likely).
+
+The function `fts_cmp()` is like `strcmp()` with the full path of a file (from
+the directory `.` - see below) and the function `fts_rcmp()` is the opposite of
+`strcmp()` on the full path.
+
+The function (`read_fts()`) does check for specific error conditions. For more
+details read the comments or the source (until eventually the functions in
+util.c are documented better).
+
+
+Added function `find_file()` which uses `read_fts()` to find file by name (base
+name or full path) from a directory (or current working directory if not
+requested) at a specified depth (if > 0). It is:
+
+```c
+extern char const *find_file(char const *filename, char const *dir, int dirfd, int *cwd, bool base,
+        int (*compar)(const FTSENT **, const FTSENT **), int options, int count, short int depth);
+```
+
+and the `filename` arg is the name to look for, the `dir` is the directory
+(name) to switch to (if not NULL), `dirfd` is the directory FD to switch to (if
+dir is NULL or `chdir(dir)` fails), `base` indicates whether to look by basename
+or full path (relative to directory, which if dir == NULL && dirfd < 0 we do not
+change directory at all), `compar()` is the same as in `read_fts()` (not
+required, one may simply use NULL just  like in `read_fts()`), options are the
+options to pass to `read_fts()` (if <= 0 it's set to `FTS_NOCHDIR`, otherwise we
+OR options with `FTS_NOCHDIR`), `count` allows one to control which number to
+match (that is if there are two files with the same match and you want the
+second one if you use count == 2 it'll not find the second one; if count <= 0
+this check is skipped) and `depth` allows one to find files at a specific depth
+(`<= 0` means skip this check). Before returning the FTS stream is closed and
+the original directory is restored. The `cwd` if not NULL will be set (in
+`read_fts()`) to the current working directory in case one needs to restore it.
+If it's not NULL this does mean the FD is left open until it is closed.
+
+Added function `has_mode()` which is similar to `is_mode()` but it checks that
+any of the bits are set (i.e. `stat.st_mode & mode`).
+
+`util_test` tests all of these functions.
+
+
+Updated `JPARSE_REPO_VERSION` to `"2.2.16 2025-02-13"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.11 2025-02-13"`.
+
+
+## Release 2.2.15 2025-02-12
+
+New util functions to detect other file types (besides directories and regular
+files) and to check if the path's mode (as in `stat.st_mode`) is an exact mode
+(based on the file type) as well as one to return the mode of a path. The
+following functions have been added:
+
+```c
+extern bool is_socket(char const *path);
+extern bool is_symlink(char const *path);
+extern bool is_chardev(char const *path);
+extern bool is_blockdev(char const *path);
+extern bool is_fifo(char const *path);
+extern bool is_mode(char const *path, mode_t mode);
+extern mode_t filemode(char const *path);
+```
+
+The util test code now uses `filemode()` and also `is_mode()` as well as
+`is_chardev()` (informative only). This completes the '`is_*()` file type
+functions and these functions were added primarily to help with `is_mode()` but
+there are other reasons besides.
+
+Update `JPARSE_UTILS_VERSION` to `"1.0.7 2025-02-12"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.10 2025-02-12"`.
+
+## Release 2.2.14 2025-02-05
+
+New util function `mkdirs()` (using `mkdir(2)`) which acts as `mkdir -p` with
+specific modes (uses `chmod(2)` as it's not affected by the umask and also
+because anything but permissions set with `mkdir(2)` is undefined). If the first
+arg (an int) is `-1` (actually < 0) it uses the current working directory to
+start out with; but one can pass a file descriptor of the directory to start out
+with. The mode is only set on directories that are created (i.e. no error)
+because otherwise an already existing directory could have its mode changed.
+Just like with `mkdir(2)` one must be careful with the mode. Of course if one
+sets a mode like 0 then trying to work under it would be a problem but that's on
+the user. If there is an error in creating a directory then it only aborts if
+errno is not `EEXIST` (already exists) so that it can continue (just like `mkdir
+-p`).
+
+`make clobber` in `test_jparse/Makefile` now removes the test directories
+created by `util_test` (which creates a directory tree of `test_jparse/a/b/c`
+and `test_jparse/a`).
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.6 2025-02-05"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.9 2025-02-05`.
+
+
+## Release 2.2.13 2025-02-03
+
+Improve `copyfile()` function so that it can now, depending on a boolean, copy
+the stat `st_mode` of the source file to the destination file (like a true copy)
+or otherwise, if the boolean is false, set the mode specified. In the case that
+the mode is copied we do an extra sanity check to make sure that source
+`st_mode` is the same as dest `st_mode` but this is not possible when setting
+the mode to a specific value so that extra sanity test (which probably is not
+even necessary) cannot be done; the caller would have to do this (as the util
+test code actually does for all of these).
+
+Other fixes were applied like making it an error if the source file does not
+exist or is not a regular readable file rather than warning.
+
+Use (in `copyfile()`) `errp()` in some cases where it was `err()` (when we had
+`errno`). Also in case of `errp()` use `strerror(errno)`.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.5 2025-02-03"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.8 2025-02-03"`.
+
+
+## Release 2.2.12 2025-02-02
+
+Added new util function `copyfile()` which takes a source (`char const *`) and
+dest (`char const *`) file (paths) (and a `mode_t`) and copies the source into
+the dest, assuming that src file is a regular readable file and the dest file
+does not exist. If the number of bytes read is not the same as the number of
+bytes written, or if the contents of the dest file is not the same as the
+contents of the source file (after copying) it is an error. If `mode` is not 0
+it uses `fchmod(2)` to set the file mode.  This function does NOT create
+directories but it can take directories as args, as long as they exist.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.4 2025-02-02"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.7 2025-02-02"`.
+
+## Release 2.2.11 2025-01-31
+
+Add new util function `path_has_component()` which takes two `char *`s: a full
+path and a name to check against. This function will allow one to check a full
+path to see if it has a specific component. This can be used along with
+`sane_relative_path()` should one need to skip specific components such as
+`.git`.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.3 2025-01-31"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.6 2025-01-31"`.
+
+
+## Release 2.2.10 2025-01-26
+
+Fix memory error in `count_comps()` (in `util.c`).
+
+Updated `sane_relative_path()` to allow for the path to start with `./`. This is
+necessary in some cases (whether it should check for `././` is another matter
+entirely but in that case it is an error). A string starting with `.//` is not a
+relative path as the first two characters being skipped will make it `/`. This
+update allows for one to use `fts_open()` on `"."` which would prepend a `./` to
+every filename. This process is done if the new boolean, the last parameter to the
+function, `dot_slash_okay`, is true.
+
+Updated util test code to test these new features.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.2 2025-01-26"`.
+Updated `UTIL_TEST_VERSION` to `"1.0.5 2025-01-26"`.
+
+
+## Release 2.2.9 2025-01-24
+
+Bug fixes in `sane_relative_path()` to do with return value checks. Also the
+`PATH_ERR_UNKNOWN` value (enum `path_sanity`) changed to `0` and `PATH_OK` to 1.
+
+Updated `JPARSE_UTILS_VERSION` to `"1.0.1 2025-01-24"`.
+
+
+## Release 2.2.8 2025-01-18
+
+Fix warnings about args to `%x` specifier in `sscanf(3)` being `unsigned int
+*`s, not `int *`s and explicitly added `-Wformat` to Makefiles.
+
+Updated `JPARSE_LIBRARY_VERSION` to `"2.2.7 2025-01-18"` from `"2.2.6
+2025-01-17"`.
+
+Add missing `JPARSE_UTILS_VERSION` to various tools.
+
+Updated man pages and code to show `version strings` (when referring to `-V` and
+exit codes) as each tool has more than one version string. Minor detail but
+worth noting. For `verge` a bit more care was taken to help distinguish version
+args versus version of the tool, the utils version, the UTF-8 library version
+and the jparse library itself. This is not very important but done to be more
+correct.
+
+Split usage message for `jsemtblgen` into two strings as it was quite long.
+Updated `JSEMTBLGEN_VERSION` to `"1.2.1 2025-01-18"` from `"1.2.0 2024-10-09"`.
+
+Added `verge` to `jparse_utils_README.md`. Other tools should also be documented
+but more pressing matters delay will delay this further for some time.
+
+Fixed `jparse_bug_report.sh` variable `TOOLS`. Each one was missing a `./` which
+meant the tools had to be installed which makes that part of the script almost
+useless.
+
+Sequenced exit codes in util.c.
+
+
+## Release 2.2.7 2025-01-17
+
+Update `count_comps()` to have a boolean `remove_all` which will, if true,
+remove all the trailing delimiter characters. The `count_dirs()` sets that
+boolean to `false` now. To explain the fixes, we assume that the path is
+`foo///` and the delimiter character is `/`: we now remove all but the last
+trailing `/`. With this there is one component. In other words, if there are 0
+delimiting characters it is 0. If however the string is `foo//foo` the middle
+`//` is changed to "/" and it ends up being one component. But if it was
+instead `foo//foo/` it would be two because of the trailing `/`. This allows
+for properly counting directories at the same time as accounting for files in
+the directories. For instance if there is a filename `bar` in the directory
+`foo` then it is incorrect to say that there are two directories. On the other
+hand, if one needs to count components in a different way, say because it's not
+directories and they want all trailing delimiter chars removed, they can use
+`true`.
+
+Updated util test code quite a bit: when no error is encountered in the
+functions added in the previous releases (`dir_name()`, `count_dirs()` and
+`sane_relative_path()`) we print out the result as well. Also more test cases
+were added to test the above change with how components are counted. An
+additional test case was added for `count_comps()` with `remove_all` set to
+true.
+
+Fixed format warnings in various files so that we no longer need `-Wno-format`.
+Fixing this allows for errors and suspect code (both types of issues were
+corrected, both in `json_parse.c` and `json_utf8.c`).
+
+Added new macro `JPARSE_UTILS_VERSION` set at `"1.0.0 2025-01-17"`. This is
+strictly so that the JSON parser library version is not changed when something
+not strictly related the jparse JSON parse(r) related routines are changed. In
+other words, `json_util.c` is a jparse library version (like `jparse.l` and
+`jparse.y`) change but a change in `util.c` is a change in the
+`JPARSE_UTILS_VERSION`. The tools now refer to this in both `-h` and `-V`.
+
+Updated `JPARSE_LIBRARY_VERSION` to `"2.2.6 2025-01-17"` (this was done prior to
+adding the `JPARSE_UTILS_VERSION`).
+Updated `JPARSE_UTF8_VERSION` to `"2.0.6 2025-01-17"`.
+
+
+## Release 2.2.6 2025-01-13
+
+Add new utility functions that act on directory paths:
+
+- `dir_name()`: takes a path and strips off `level` components (i.e. `/`). In
+the case of successive `/`s it removes those as well. The comments at the top of
+the function explains in more detail the way the `level` works. This is modelled
+after the `base_name()` function which functions as the `basename(3)` function;
+`dir_name()` functions as `dirname(3)`.
+- `count_comps()`: counts in a string the number of components delimited by the
+component character (a `char`). Successive component characters are counted as
+one. The comments at the top of the function details specifics.
+- `count_dirs()`: using `count_comps()` (with component `/`), count the number
+of directory components in a path.
+
+Updated the utility test code to test the new functions.
+
+Updated `JPARSE_LIBRARY_VERSION` to `""2.2.5 2025-01-13""` from  "2.2.4
+2025-01-07".
+
+Updated `UTIL_TEST_VERSION` to `"1.0.2 2025-01-13"` from `"1.0.1 2025-01-08"`.
+
+
+## Release 2.2.5 2025-01-10
+
+Improve comment in `sane_relative_path()` about the regexp, keeping in mind that
+the locale does affect `[[:alnum:]]`.
+
+Fixed typo in jparse.l (this means that jparse.ref.c was regenerated).
+
+
+## Release 2.2.4 2025-01-08
+
+Add comment about the regexp that `sane_relative_path()` should enforce, namely:
+
+```regexp
+^([[:alnum:]_+-]+/)*([[:alnum:]_+-]+(\.[[:alnum:]_+-]+))?$
+```
+
+and update the util test code to test additional checks.
+
+
+## Release 2.2.3 2025-01-07
+
+Updated comments in jparse.l and jparse.y and rebuilt backup files.
+
+Updated sorry.tm.ca.h to be more specific on what files bison and flex generate.
+
+`make install` now installs `jparse.y` and `jparse.l` into
+`${PREFIX}/include/jparse` like other projects do with their bison and flex
+source files. These files are deleted by `make uninstall` because the
+subdirectory is deleted.
+
+New utility functions:
+
+```c
+extern enum path_sanity sane_relative_path(char const *str, uintmax_t max_path_len, uintmax_t max_filename_len,
+        uintmax_t max_depth);
+extern char const *path_sanity_name(enum path_sanity sanity);
+extern char const *path_sanity_error(enum path_sanity sanity);
+```
+
+which determine if a path is both relative and POSIX plus + safe, based on the
+maximum depth, maximum path length and the maximum length of each component. An
+enum was added:
+
+
+```c
+/*
+ * for the path sanity functions
+ */
+enum path_sanity {
+    PATH_ERR_UNKNOWN = -1,              /* unknown error code (default in switch) */
+    PATH_OK = 0,                        /* path (str) is a sane relative path */
+    PATH_ERR_PATH_IS_NULL,              /* path string (str) is NULL */
+    PATH_ERR_PATH_EMPTY,                /* path string (str) is 0 length (empty) */
+    PATH_ERR_PATH_TOO_LONG,             /* path (str) > max_path_len */
+    PATH_ERR_MAX_PATH_LEN_0,            /* max_path_len <= 0 */
+    PATH_ERR_MAX_DEPTH_0,               /* max_depth is <= 0 */
+    PATH_ERR_NOT_RELATIVE,              /* path (str) not relative (i.e. it starts with a '/') */
+    PATH_ERR_NAME_TOO_LONG,             /* path component > max_filename_len */
+    PATH_ERR_MAX_NAME_LEN_0,            /* max filename length <= 0 */
+    PATH_ERR_PATH_TOO_DEEP,             /* current depth > max_depth */
+    PATH_ERR_NOT_POSIX_SAFE             /* invalid/not sane path component */
+};
+```
+
+The new function `sane_relative_path()` returns one of those values depending on
+the condition (except that it won't return `PATH_ERR_UNKNOWN` as that is for the
+other two functions in the case one passes an invalid value). The function
+`path_sanity_name()` returns a read-only string of the enum value that matches
+the name (i.e. `"PATH_OK"` for `PATH_OK`). `path_sanity_error()` returns a
+simple message based on the value passed in although there is some room for
+improvement.
+
+The markdown files have a `Last updated:` at the top now, to more easily keep
+track of when the file was last modified.
+
+The man page `jparse.3` was updated with clarifications of a function.
+
+The utility test code has many new cases that tests every condition of
+`sane_relative_path()`.
+
+Updated version of `JPARSE_LIBRARY_VERSION` to `"2.2.4 2025-01-07"` from `"2.2.3
+2024-12-31"`.
+
+
+## Release 2.2.2 2025-01-04
+
+Add `test_jparse/not_a_comment.sh` and update `test_jparse/prep.sh` to use it.
+This will test if any Makefile.local files exist and if any do it'll warn at the
+end so that the user of `make prep` or `make release` can be aware of it and be
+sure it does not skew the results.
+
+The script `not_a_comment.sh` is from the mkiocccentry repo and was
+written by Landon Curt Noll (thanks!).
+
+Fix `shellcheck` for `test_jparse/prep.sh` and add script to missing `SH_FILES`
+in `test_jparse/Makefile` (the reason it was not caught by `make shellcheck` is
+because the script was missing from the Makefile).
+
+
+## Release 2.2.1 2025-01-02
+
+Disable 2 invalid JSON encode/decode string tests in `jstr_test.sh`.
+
+
+## Release 2.2.0 2025-01-01
+
+Bug fixes to do with exit codes in `test_jparse/jparse_test.sh`. Some functions
+being passed invalid data did not exit but rather change the exit code which
+could then be changed by a function that runs later. Also in the case that a
+test passed, in one location, it would change the exit code back to 0, thus
+changing the result of a failed test back to not failing, giving a false result.
+As the exit code starts at 0 now if any test fails it'll never be a 0 exit code
+(though if an internal error occurs later the exit code won't indicate a test
+failed, if there was one).
+
+
 ## Release 2.1.10 2024-12-31
 
 Improve invalid JSON token error message (`yyerror()`)

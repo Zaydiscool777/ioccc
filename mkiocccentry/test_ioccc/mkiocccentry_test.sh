@@ -11,9 +11,7 @@
 #	@xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
-#
 # and
-#
 #	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
 #
 # Share and enjoy! :-)
@@ -21,25 +19,23 @@
 # setup
 #
 
-# attempt to fetch system specific path to the tools we need
-# get cp path
-CP="$(type -P cp 2>/dev/null)"
-# Make sure CP is set:
+
+# IOCCC requires use of C locale
 #
-# It's possible that the path could not be obtained so we set it to the default
-# in this case.
-#
-# We could do it via parameter substitution but since it tries to execute the
-# command if for some reason the tool ever works without any args specified it
-# could make the script block (if we did it via parameter substitution we would
-# still have to redirect stderr to /dev/null). It would look like:
-#
-#   ${CP:=/usr/bin/CP} 2>/dev/null
-#
-# but due to the reasons cited above we must rely on the more complicated form:
-if [[ -z "$CP" ]]; then
-    CP="/usr/bin/cp"
-fi
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
 
 
 # get tar path
@@ -57,9 +53,7 @@ TAR="$(type -P tar 2>/dev/null)"
 #   ${TAR:=/usr/bin/tar} 2>/dev/null
 #
 # but due to the reasons cited above we must rely on the more complicated form:
-if [[ -z "$TAR" ]]; then
-    TAR="/usr/bin/tar"
-fi
+[[ -z "$TAR" ]] && TAR="/usr/bin/tar"
 
 # get ls path
 LS="$(type -P ls 2>/dev/null)"
@@ -76,15 +70,32 @@ LS="$(type -P ls 2>/dev/null)"
 #   ${LS:=/bin/ls} 2>/dev/null
 #
 # but due to the reasons cited above we must rely on the more complicated form:
-if [[ -z "$LS" ]]; then
-    LS="/bin/ls"
-fi
+[[ -z "$LS" ]] && LS="/bin/ls"
+
+# get make path
+MAKE="$(type -P make 2>/dev/null)"
+# Make sure MAKE is set:
+#
+# It's possible that the path could not be obtained so we set it to the default
+# in this case.
+#
+# We could do it via parameter substitution but since it tries to execute the
+# command if for some reason the tool ever works without any args specified it
+# could make the script block (if we did it via parameter substitution we would
+# still have to redirect stderr to /dev/null). It would look like:
+#
+#   ${MAKE:=/bin/ls} 2>/dev/null
+#
+# but due to the reasons cited above we must rely on the more complicated form:
+[[ -z "$MAKE" ]] && MAKE="/usr/bin/make"
+
+
 
 export TXZCHK="./txzchk"
 export FNAMCHK="./test_ioccc/fnamchk"
 
-export MKIOCCCENTRY_TEST_VERSION="1.0.2 2024-12-30"
-export USAGE="usage: $0 [-h] [-V] [-v level] [-J level] [-t tar] [-T txzchk] [-l ls] [-c cp] [-F fnamchk] [-Z topdir]
+export MKIOCCCENTRY_TEST_VERSION="2.0.2 2025-03-14"
+export USAGE="usage: $0 [-h] [-V] [-v level] [-J level] [-t tar] [-T txzchk] [-l ls] [-F fnamchk] [-m make] [-Z topdir]
 
     -h              print help and exit
     -V              print version and exit
@@ -93,8 +104,8 @@ export USAGE="usage: $0 [-h] [-V] [-v level] [-J level] [-t tar] [-T txzchk] [-l
     -t tar	    path to tar that accepts -J option (def: $TAR)
     -T txzchk	    path to tar (def: $TXZCHK)
     -l ls	    path to ls executable (def: $LS)
-    -c cp	    path to cp executable (def: $CP)
     -F fnamchk	    path to fnamchk executable (def: $FNAMCHK)
+    -m make         path to make (def: $MAKE)
     -Z topdir	    top level build directory (def: try . or ..)
 
 Exit codes:
@@ -112,7 +123,7 @@ export TOPDIR=
 
 # parse args
 #
-while getopts :hv:J:Vt:T:el:c:F:Z: flag; do
+while getopts :hv:J:Vt:T:el:F:m:Z: flag; do
     case "$flag" in
     h)	echo "$USAGE" 1>&2
 	exit 2
@@ -132,10 +143,10 @@ while getopts :hv:J:Vt:T:el:c:F:Z: flag; do
 	;;
     l)	LS="$OPTARG";
 	;;
-    c)	CP="$OPTARG";
-	;;
     F)	FNAMCHK="$OPTARG";
 	;;
+    m)  MAKE="$OPTARG";
+        ;;
     \?) echo "$0: ERROR: invalid option: -$OPTARG" 1>&2
 	echo 1>&2
 	echo "$USAGE" 1>&2
@@ -204,28 +215,33 @@ fi
 
 # working locations - adjust as needed
 #
-work_dir="test_ioccc/test_work"
-src_dir="test_ioccc/test_src"
+Makefile="test_ioccc/Makefile.test"
+workdir="test_ioccc/workdir"
+topdir="test_ioccc/topdir"
+topdir_topdir="test_ioccc/topdir/topdir"
+topdir_topdir_topdir_topdir_topdir="test_ioccc/topdir/a/b/c/d/e"
 
+# clean out test directories first
+rm -rf -- "${workdir}" "${topdir}" "${topdir_topdir}" "${topdir_topdir_topdir_topdir_topdir}"
 # be sure the working locations exist
 #
-mkdir -p -- "${work_dir}" "${src_dir}"
+mkdir -p -- "${workdir}" "${topdir}"
 status=$?
 if [[ ${status} -ne 0 ]]; then
-    echo "$0: ERROR: error in creating working dirs: mkdir -p -- ${work_dir} ${src_dir}" 1>&2
+    echo "$0: ERROR: error in creating working dirs: mkdir -p -- ${workdir} ${topdir}" 1>&2
     exit 9
 fi
 
 # firewall
 #
 # we need a working directory
-if [[ ! -d ${work_dir} ]]; then
-    echo "$0: ERROR: work_dir not found: ${work_dir}" 1>&2
+if [[ ! -d ${workdir} ]]; then
+    echo "$0: ERROR: workdir not found: ${workdir}" 1>&2
     exit 9
 fi
 # we also need the source directory
-if [[ ! -d ${src_dir} ]]; then
-    echo "$0: ERROR: src_dir not found: ${src_dir}" 1>&2
+if [[ ! -d ${topdir} ]]; then
+    echo "$0: ERROR: topdir not found: ${topdir}" 1>&2
     exit 9
 fi
 
@@ -246,18 +262,11 @@ if [[ ! -x "${LS}" ]]; then
     echo "$0: ERROR: executable ls not found: $LS" 1>&2
     exit 9
 fi
-# we need cp
-if [[ ! -x "${CP}" ]]; then
-    echo "$0: ERROR: executable cp not found: $CP" 1>&2
-    exit 9
-fi
-
 # we need txzchk as well
 if [[ ! -x "${TXZCHK}" ]]; then
     echo "$0: ERROR: executable not found: $TXZCHK" 1>&2
     exit 9
 fi
-
 # And we certainly need some tar to throw some feathers on!
 #
 # Well actually we DON'T want to throw feathers on it but we can't test txzchk
@@ -267,13 +276,17 @@ if [[ ! -x "${TAR}" ]]; then
     exit 9
 fi
 
-# clean out the work_dir area
-work_dir_esc="${work_dir}"
-test "${work_dir:0:1}" = "-" && work_dir_esc=./"${work_dir}"
-find "${work_dir_esc}" -mindepth 1 -depth -delete
+# we need this for later and to make sure it's removed now
+LONG_FILENAME="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+# clean out the workdir area
+workdir_esc="${workdir}"
+test "${workdir:0:1}" = "-" && workdir_esc=./"${workdir}"
+find "${workdir_esc}" -mindepth 1 -depth -delete
+mkdir -p "${topdir}"
 
 # Answers as of mkiocccentry version: v0.40 2022-03-15
-answers() {
+answers()
+{
 cat <<"EOF"
 test
 0
@@ -288,7 +301,6 @@ https://b.host0.example.com/index.html
 @mastodon0@example.com
 @github0
 an affiliation for #0 author
-n
 
 author1 middle1a middle1b last1
 UK
@@ -298,7 +310,6 @@ UK
 
 
 
-n
 replaced_author1_handle
 EOF
 # Avoid triggering an out of date shellcheck bug by using encoded hex characters
@@ -311,7 +322,6 @@ http://d.host2.example.com/index.html
 @mastodon2@example.com
 @github2
 an affiliation for #2 author
-y
 
 author3 middle3 last3
 AU
@@ -321,7 +331,6 @@ https://f.host0.example.com/index.html
 @mastodon3@example.com
 @github3
 an affiliation for #3 author
-y
 author3_last3
 @#$%^
 AU
@@ -331,7 +340,6 @@ https://g.host0.example.com/index.html
 @mastodon4@example.com
 @github4
 an affiliation for #4 author
-n
 
 ANSWERS_EOF
 EOF
@@ -350,40 +358,137 @@ grep -E '^#define MKIOCCCENTRY_ANSWERS_VERSION' soup/version.h | cut -d' ' -f3 |
 # shellcheck disable=SC2218
 answers >>answers.txt
 
-# fake some required files
+# fake a submission that only has the required files
 #
-test -f "${src_dir}"/Makefile || cat Makefile.example >"${src_dir}"/Makefile
-test -f "${src_dir}"/remarks.md || cat README.md >"${src_dir}"/remarks.md
-test -f "${src_dir}"/extra1 || echo "123" >"${src_dir}"/extra1
-test -f "${src_dir}"/extra2 || echo "456" >"${src_dir}"/extra2
-
+test -f "${topdir}"/Makefile || cat "${Makefile}" >"${topdir}"/Makefile
+test -f "${topdir}"/remarks.md || cat README.md >"${topdir}"/remarks.md
+test -f "${topdir}"/prog.c || echo "int main(){}" >"${topdir}"/prog.c
 # delete the work directory for next test
-find "${work_dir_esc}" -mindepth 1 -depth -delete
-rm -f "${src_dir}"/empty.c
-:> "${src_dir}"/empty.c
+find "${workdir_esc}" -mindepth 1 -depth -delete
 # test empty prog.c, ignoring the warning about it
-./mkiocccentry -y -q -W -i answers.txt -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -c "$CP" -l "$LS"  -v "$V_FLAG" -J "$J_FLAG" -- "${work_dir}" "${src_dir}"/{empty.c,Makefile,remarks.md,extra1,extra2}
+echo "./mkiocccentry -y -Y -q -W -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS  -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -W -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS"  -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
 status=$?
 if [[ ${status} -ne 0 ]]; then
     echo "$0: ERROR: mkiocccentry non-zero exit code: $status" 1>&2
     exit "${status}"
 fi
-rm -f "${src_dir}"/empty.c
+
+echo "--"
+
+# Answers as of mkiocccentry version: v0.40 2022-03-15
+answers()
+{
+cat <<"EOF"
+test
+1
+title-for-entry0
+abstract for entry #0
+5
+author0 middle0 thisisaveryverylonglastname0
+AU
+user0@example.com
+https://a.host0.example.com/index.html
+https://b.host0.example.com/index.html
+@mastodon0@example.com
+@github0
+an affiliation for #0 author
+
+author1 middle1a middle1b last1
+UK
+
+
+
+
+
+
+replaced_author1_handle
+EOF
+# Avoid triggering an out of date shellcheck bug by using encoded hex characters
+printf "Author2 \\xc3\\xa5\\xe2\\x88\\xab\\xc3\\xa7\\xe2\\x88\\x82\\xc2\\xb4\\xc6\\x92\\xc2\\xa9 LAST2\\n"
+cat <<"EOF"
+US
+user2@example.com
+http://c.host2.example.com/index.html
+http://d.host2.example.com/index.html
+@mastodon2@example.com
+@github2
+an affiliation for #2 author
+
+author3 middle3 last3
+AU
+user0@example.com
+https://e.host0.example.com/index.html
+https://f.host0.example.com/index.html
+@mastodon3@example.com
+@github3
+an affiliation for #3 author
+author3_last3
+@#$%^
+AU
+user0@example.com
+https://g.host0.example.com/index.html
+
+@mastodon4@example.com
+@github4
+an affiliation for #4 author
+
+ANSWERS_EOF
+EOF
+}
+rm -f answers.txt
+# Retrieve the answers version from mkiocccentry.c and write to answers file:
+grep -E '^#define MKIOCCCENTRY_ANSWERS_VERSION' soup/version.h | cut -d' ' -f3 | sed 's/"//g' >answers.txt
+# Append answers + EOF marker
+#
+# We disable this shellcheck error because answers already is defined but we
+# redefine it as well. The error is ironically erroneous as if one is to move up
+# in the file they'll see that answers is actually defined above as well.
+#
+# SC2218 (error): This function is only defined later. Move the definition up.
+# https://www.shellcheck.net/wiki/SC2218
+# shellcheck disable=SC2218
+answers >>answers.txt
+
+# fake some required, extra and optional files
+#
+mkdir -p "${topdir_topdir}"
+test -f "${topdir}"/Makefile || cat "${Makefile}" >"${topdir}"/Makefile
+test -f "${topdir}"/remarks.md || cat README.md >"${topdir}"/remarks.md
+test -f "${topdir}"/extra1 || echo "123" >"${topdir}"/extra1
+test -f "${topdir}"/extra2 || echo "456" >"${topdir}"/extra2
+test -f "${topdir}"/try.sh || touch "${topdir}"/try.sh
+test -f "${topdir}"/try.alt.sh || touch "${topdir}"/try.alt.sh
+test -f "${topdir}"/prog.alt.c || touch "${topdir}"/prog.alt.c
+
+rm -f "${topdir}"/prog.c
+:> "${topdir}"/prog.c
+# test empty prog.c, ignoring the warning about it
+echo "./mkiocccentry -y -Y -q -W -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS  -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -W -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS"  -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
+status=$?
+if [[ ${status} -ne 0 ]]; then
+    echo "$0: ERROR: mkiocccentry non-zero exit code: $status" 1>&2
+    exit "${status}"
+fi
+
+echo "--"
 
 # Form 'submissions' that are unlikely to win the IOCCC :-)
 #
-test -f "${src_dir}"/prog.c || {
-cat >"${src_dir}"/prog.c <<"EOF"
+test -f "${topdir}"/prog.c || {
+cat >"${topdir}"/prog.c <<"EOF"
 #include <stdio.h>
 int main(void) { puts("Hello, World!"); }
 EOF
 }
 
 # Answers as of mkiocccentry version: v0.40 2022-03-15
-answers() {
+answers()
+{
 cat <<"EOF"
 test
-1
+2
 title-for-entry0
 abstract for entry #0
 5
@@ -395,7 +500,6 @@ https://i.host0.example.com/index.html
 @mastodon0@example.com
 @github0
 an affiliation for #0 author
-n
 
 author1 middle1a middle1b last1
 UK
@@ -405,7 +509,6 @@ UK
 
 
 
-n
 replaced_author1_handle
 EOF
 # Avoid triggering an out of date shellcheck bug by using encoded hex characters
@@ -418,7 +521,6 @@ http://k.host2.example.com/index.html
 @mastodon2@example.com
 @github2
 an affiliation for #2 author
-y
 
 author3 middle3 last3
 AU
@@ -428,7 +530,6 @@ https://l.host0.example.com/index.html
 @mastodon3@example.com
 @github3
 an affiliation for #3 author
-y
 author3_last3
 @#$%^
 AU
@@ -438,7 +539,6 @@ https://m.host0.example.com/index.html
 @mastodon4@example.com
 @github4
 an affiliation for #4 author
-n
 
 ANSWERS_EOF
 EOF
@@ -458,18 +558,22 @@ answers >>answers.txt
 
 # run the test, looking for an exit
 #
-./mkiocccentry -y -q -i answers.txt -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -c "$CP" -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${work_dir}" "${src_dir}"/{prog.c,Makefile,remarks.md,extra1,extra2}
+echo "./mkiocccentry -y -Y -q -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
 status=$?
 if [[ ${status} -ne 0 ]]; then
     echo "$0: ERROR: mkiocccentry non-zero exit code: $status" 1>&2
     exit "${status}"
 fi
 
+echo "--"
+
 # Answers as of mkiocccentry version: v0.40 2022-03-15
-answers() {
+answers()
+{
 cat <<"EOF"
 12345678-1234-4321-abcd-1234567890ab
-2
+3
 title-for-entry0
 abstract for entry #0
 5
@@ -481,7 +585,6 @@ https://o.host0.example.com/index.html
 @mastodon0@example.com
 @github0
 an affiliation for #0 author
-n
 
 author1 middle1a middle1b last1
 UK
@@ -491,7 +594,6 @@ UK
 
 
 
-n
 replaced_author1_handle
 EOF
 # Avoid triggering an out of date shellcheck bug by using encoded hex characters
@@ -504,7 +606,6 @@ http://p.host2.example.com/index.html
 @mastodon2@example.com
 @github2
 an affiliation for #2 author
-y
 
 author3 middle3 last3
 AU
@@ -514,7 +615,6 @@ https://r.host0.example.com/index.html
 @mastodon3@example.com
 @github3
 an affiliation for #3 author
-y
 author3_last3
 @#$%^
 AU
@@ -524,7 +624,6 @@ https://t.host0.example.com/index.html
 @mastodon4@example.com
 @github4
 an affiliation for #4 author
-n
 
 ANSWERS_EOF
 EOF
@@ -544,23 +643,27 @@ answers >>answers.txt
 
 # fake a couple more files
 #
-test -f "${src_dir}"/foo || cat LICENSE >"${src_dir}"/foo
-test -f "${src_dir}"/bar || cat CODE_OF_CONDUCT.md >"${src_dir}"/bar
+test -f "${topdir}"/foo || cat LICENSE >"${topdir}"/foo
+test -f "${topdir}"/bar || cat CODE_OF_CONDUCT.md >"${topdir}"/bar
 
 # run the test, looking for an exit
 #
-./mkiocccentry -y -q -i answers.txt -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -c "$CP" -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${work_dir}" "${src_dir}"/{prog.c,Makefile,remarks.md,extra1,extra2,foo,bar}
+echo "./mkiocccentry -y -Y -q -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
 status=$?
 if [[ ${status} -ne 0 ]]; then
     echo "$0: ERROR: mkiocccentry non-zero exit code: $status" 1>&2
     exit "${status}"
 fi
 
+echo "--"
+
 # Answers as of mkiocccentry version: v0.40 2022-03-15
-answers() {
+answers()
+{
 cat <<"EOF"
 test
-2
+4
 title-for-entry0
 abstract for entry #0
 5
@@ -572,7 +675,6 @@ https://b.host0.example.com/index.html
 @mastodon0@example.com
 @github0
 an affiliation for #0 author
-n
 
 author1 middle1a middle1b last1
 UK
@@ -582,7 +684,6 @@ UK
 
 
 
-n
 replaced_author1_handle
 EOF
 # Avoid triggering an out of date shellcheck bug by using encoded hex characters
@@ -595,7 +696,6 @@ http://d.host2.example.com/index.html
 @mastodon2@example.com
 @github2
 an affiliation for #2 author
-y
 
 author3 middle3 last3
 AU
@@ -605,7 +705,6 @@ https://f.host0.example.com/index.html
 @mastodon3@example.com
 @github3
 an affiliation for #3 author
-y
 author3_last3
 @#$%^
 AU
@@ -615,7 +714,6 @@ https://g.host0.example.com/index.html
 @mastodon4@example.com
 @github4
 an affiliation for #4 author
-n
 
 ANSWERS_EOF
 EOF
@@ -634,26 +732,220 @@ grep -E '^#define MKIOCCCENTRY_ANSWERS_VERSION' soup/version.h | cut -d' ' -f3 |
 # shellcheck disable=SC2218
 answers >>answers.txt
 
-
-# this next test must FAIL as it has too long a filename.
+#
+# this next test must FAIL as it has a filename that is too long
 #
 
 # fake a filename that's too long
 #
-LONG_FILENAME="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-test -f "${src_dir}/$LONG_FILENAME" || touch "${src_dir}/$LONG_FILENAME"
+test -f "${topdir}/$LONG_FILENAME" || touch "${topdir}/$LONG_FILENAME"
 
 # run the test, looking for an exit
 #
-./mkiocccentry -y -q -i answers.txt -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -c "$CP" -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${work_dir}" "${src_dir}"/{prog.c,Makefile,remarks.md,extra1,extra2,foo,bar,"${LONG_FILENAME}"}
+echo "./mkiocccentry -y -Y -q -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e  -l $LS -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e  -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
 status=$?
-if [[ ${status} -eq 0 ]]; then
-    echo "$0: ERROR: mkiocccentry zero exit code when it should be non-zero: $status" 1>&2
+if [[ ${status} -ne 4 ]]; then
+    echo "$0: ERROR: mkiocccentry exit code not 4: $status" 1>&2
     exit 1
 else
-    echo "$0: NOTICE: the above error is expected as we were testing that the filename" 1>&2
-    echo "$0: NOTICE: length limit works." 1>&2
+    echo "$0: NOTE: the above error is expected as we were testing that the filename" 1>&2
+    echo "$0: NOTE: length limit works." 1>&2
 fi
+
+echo "--"
+
+# Answers as of mkiocccentry version: v0.40 2022-03-15
+answers()
+{
+cat <<"EOF"
+test
+5
+title-for-entry0
+abstract for entry #0
+5
+author0 middle0 thisisaveryverylonglastname0
+AU
+user0@example.com
+https://a.host0.example.com/index.html
+https://b.host0.example.com/index.html
+@mastodon0@example.com
+@github0
+an affiliation for #0 author
+
+author1 middle1a middle1b last1
+UK
+
+
+
+
+
+
+replaced_author1_handle
+EOF
+# Avoid triggering an out of date shellcheck bug by using encoded hex characters
+printf "Author2 \\xc3\\xa5\\xe2\\x88\\xab\\xc3\\xa7\\xe2\\x88\\x82\\xc2\\xb4\\xc6\\x92\\xc2\\xa9 LAST2\\n"
+cat <<"EOF"
+US
+user2@example.com
+http://c.host2.example.com/index.html
+http://d.host2.example.com/index.html
+@mastodon2@example.com
+@github2
+an affiliation for #2 author
+
+author3 middle3 last3
+AU
+user0@example.com
+https://e.host0.example.com/index.html
+https://f.host0.example.com/index.html
+@mastodon3@example.com
+@github3
+an affiliation for #3 author
+author3_last3
+@#$%^
+AU
+user0@example.com
+https://g.host0.example.com/index.html
+
+@mastodon4@example.com
+@github4
+an affiliation for #4 author
+
+ANSWERS_EOF
+EOF
+}
+rm -f answers.txt
+# Retrieve the answers version from mkiocccentry.c and write to answers file:
+grep -E '^#define MKIOCCCENTRY_ANSWERS_VERSION' soup/version.h | cut -d' ' -f3 | sed 's/"//g' >answers.txt
+# Append answers + EOF marker
+#
+# We disable this shellcheck error because answers already is defined but we
+# redefine it as well. The error is ironically erroneous as if one is to move up
+# in the file they'll see that answers is actually defined above as well.
+#
+# SC2218 (error): This function is only defined later. Move the definition up.
+# https://www.shellcheck.net/wiki/SC2218
+# shellcheck disable=SC2218
+answers >>answers.txt
+
+# remove long filename
+rm -f "${topdir}"/"${LONG_FILENAME}"
+# make a file in the subdirectory
+#
+test -f "${topdir_topdir}/foo" || touch "${topdir_topdir}/foo"
+
+# run the test, looking for an exit
+#
+echo "./mkiocccentry -y -Y -q -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
+status=$?
+if [[ ${status} -ne 0 ]]; then
+    echo "$0: ERROR: mkiocccentry non-zero exit code: $status" 1>&2
+    exit "${status}"
+fi
+
+echo "--"
+
+# Answers as of mkiocccentry version: v0.40 2022-03-15
+answers()
+{
+cat <<"EOF"
+test
+6
+title-for-entry0
+abstract for entry #0
+5
+author0 middle0 thisisaveryverylonglastname0
+AU
+user0@example.com
+https://a.host0.example.com/index.html
+https://b.host0.example.com/index.html
+@mastodon0@example.com
+@github0
+an affiliation for #0 author
+
+author1 middle1a middle1b last1
+UK
+
+
+
+
+
+
+replaced_author1_handle
+EOF
+# Avoid triggering an out of date shellcheck bug by using encoded hex characters
+printf "Author2 \\xc3\\xa5\\xe2\\x88\\xab\\xc3\\xa7\\xe2\\x88\\x82\\xc2\\xb4\\xc6\\x92\\xc2\\xa9 LAST2\\n"
+cat <<"EOF"
+US
+user2@example.com
+http://c.host2.example.com/index.html
+http://d.host2.example.com/index.html
+@mastodon2@example.com
+@github2
+an affiliation for #2 author
+
+author3 middle3 last3
+AU
+user0@example.com
+https://e.host0.example.com/index.html
+https://f.host0.example.com/index.html
+@mastodon3@example.com
+@github3
+an affiliation for #3 author
+author3_last3
+@#$%^
+AU
+user0@example.com
+https://g.host0.example.com/index.html
+
+@mastodon4@example.com
+@github4
+an affiliation for #4 author
+
+ANSWERS_EOF
+EOF
+}
+rm -f answers.txt
+# Retrieve the answers version from mkiocccentry.c and write to answers file:
+grep -E '^#define MKIOCCCENTRY_ANSWERS_VERSION' soup/version.h | cut -d' ' -f3 | sed 's/"//g' >answers.txt
+# Append answers + EOF marker
+#
+# We disable this shellcheck error because answers already is defined but we
+# redefine it as well. The error is ironically erroneous as if one is to move up
+# in the file they'll see that answers is actually defined above as well.
+#
+# SC2218 (error): This function is only defined later. Move the definition up.
+# https://www.shellcheck.net/wiki/SC2218
+# shellcheck disable=SC2218
+answers >>answers.txt
+
+# be sure the working location exist
+#
+mkdir -p -- "${topdir_topdir_topdir_topdir_topdir}"
+status=$?
+if [[ ${status} -ne 0 ]]; then
+    echo "$0: ERROR: error in creating working dirs: mkdir -p -- ${topdir_topdir_topdir_topdir_topdir}" 1>&2
+    exit 9
+fi
+
+test -f "${topdir_topdir_topdir_topdir_topdir}/foo" || touch "${topdir_topdir_topdir_topdir_topdir}/foo"
+
+# run the test, looking for an exit
+#
+echo "./mkiocccentry -y -Y -q -i answers.txt -m $MAKE -F $FNAMCHK -t $TAR -T $TXZCHK -e -l $LS -v $V_FLAG -J $J_FLAG -- ${workdir} ${topdir}"
+./mkiocccentry -y -Y -q -i answers.txt -m "$MAKE" -F "$FNAMCHK" -t "$TAR" -T "$TXZCHK" -e -l "$LS" -v "$V_FLAG" -J "$J_FLAG" -- "${workdir}" "${topdir}"
+status=$?
+if [[ ${status} -ne 4 ]]; then
+    echo "$0: ERROR: mkiocccentry zero exit code not 4: $status" 1>&2
+    exit 1
+else
+    echo "$0: NOTE: the above error is expected as we were testing that the max depth" 1>&2
+    echo "$0: NOTE: limit works." 1>&2
+fi
+
+echo "--"
 
 # All Done!!! All Done!!! -- Jessica Noll, Age 2
 #

@@ -1,19 +1,38 @@
 #!/usr/bin/env make
 #
-# jparse - a JSON parser written in C
+# jparse - JSON parser, library and tools written in C
 #
-#  This JSON parser was co-developed in 2022 by:
+# Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
-#	@xexyl
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
+#
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+#
+#  @xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
-#  and:
+# and:
 #	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
 #
-#  "Because sometimes even the IOCCC Judges need some help." :-)
+# "Because sometimes even the IOCCC Judges need some help." :-)
 #
-#  "Share and Enjoy!"
-#      --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+# Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+####
 
 #############
 # utilities #
@@ -156,18 +175,6 @@ MAKE_CD_Q= --no-print-directory
 #
 # This repo supports c17 and later.
 #
-# NOTE: at one point we used -std=gnu11 because there were a few older systems
-#       in late 2021 that did not have compilers that (yet) supported gnu17.
-#       While there may be even more out of date systems that do not support
-#       gnu11, we have to draw the line somewhere. Besides, one of those systems
-#       reaches its EOL on 30 June 2024 and that's three days away at this
-#       point.
-#
-#	--------------------------------------------------
-#
-#	^^ the line is above :-)
-#
-#C_STD= -std=gnu11
 C_STD= -std=gnu17
 
 # optimization and debug level
@@ -177,8 +184,8 @@ C_OPT= -O3
 
 # Compiler warnings
 #
-WARN_FLAGS= -pedantic -Wall -Wextra -Wno-unused-but-set-variable -Wno-char-subscripts -Wno-sign-compare \
-	    -Wno-format
+WARN_FLAGS= -pedantic -Wall -Wextra -Wformat -Wno-char-subscripts -Wno-sign-compare
+	    
 #WARN_FLAGS= -pedantic -Wall -Wextra -Werror
 
 # special compiler flags
@@ -238,7 +245,7 @@ MAN1_PAGES= man/man1/jparse.1 man/man1/jstrdecode.1 man/man1/jstrencode.1 man/ma
 MAN3_PAGES= man/man3/jparse.3 man/man3/json_dbg.3 man/man3/json_dbg_allowed.3 \
 	    man/man3/json_err_allowed.3 man/man3/json_warn_allowed.3 man/man3/parse_json.3 \
 	    man/man3/parse_json_file.3 man/man3/parse_json_stream.3 man/man3/json_tree_free.3 \
-	    man/man3/parse_json_str.3
+	    man/man3/parse_json_str.3 man/man3/json_tree_walk.3 man/man3/vjson_tree_walk.3
 MAN8_PAGES= man/man8/jnum_chk.8 man/man8/jnum_gen.8 man/man8/jparse_test.8 man/man8/jsemcgen.8 \
 	man/man8/jsemtblgen.8 man/man8/jstr_test.8 man/man8/verge.8 \
 	man/man8/run_bison.8 man/man8/run_bison.sh.8 man/man8/run_flex.8 man/man8/run_flex.sh.8 \
@@ -262,11 +269,11 @@ ALL_BUILT_SRC= ${BUILT_C_SRC} ${BUILT_H_SRC}
 
 # NOTE: ${LIB_OBJS} are objects to put into a library and removed by make clean
 #
-LIB_OBJS= jparse.o jparse.tab.o json_parse.o json_sem.o json_util.o util.o jstr_util.o json_utf8.o
+LIB_OBJS= jparse.o jparse.tab.o json_parse.o json_sem.o json_util.o util.o jstr_util.o json_utf8.o verge.o
 
 # NOTE: ${OTHER_OBJS} are objects NOT put into a library and ARE removed by make clean
 #
-OTHER_OBJS= verge.o jsemtblgen.o jstrdecode.o jstrencode.o jparse_main.o
+OTHER_OBJS= verge_main.o jsemtblgen.o jstrdecode.o jstrencode.o jparse_main.o
 
 # all intermediate files which are also removed by make clean
 #
@@ -409,7 +416,7 @@ PROG_TARGETS= jparse verge jsemtblgen jstrdecode jstrencode
 #
 H_SRC_TARGETS= jparse.h jparse.lex.h jparse.lex.ref.h jparse.tab.h jparse.tab.ref.h \
 	       jparse_main.h json_parse.h json_sem.h json_util.h sorry.tm.ca.h util.h \
-	       version.h json_utf8.h
+	       version.h json_utf8.h verge.h
 
 # what to make by all but NOT to removed by clobber
 #
@@ -489,7 +496,7 @@ json_util.o: json_util.c json_util.h
 	${CC} ${CFLAGS} json_util.c -c
 
 jparse.tab.o: jparse.tab.c
-	${CC} ${CFLAGS} jparse.tab.c -c
+	${CC} ${CFLAGS} -Wno-unused-but-set-variable jparse.tab.c -c
 
 jparse_main.o: jparse_main.c version.h
 	${CC} ${CFLAGS} jparse_main.c -c
@@ -564,7 +571,7 @@ util.o: util.c util.h
 verge.o: verge.c verge.h version.h
 	${CC} ${CFLAGS} verge.c -c
 
-verge: verge.o util.o
+verge: verge.o verge_main.o util.o
 	${CC} ${CFLAGS} $^ -o $@ ${LD_DIR} -ldbg -ldyn_array
 
 libjparse.a: ${LIB_OBJS}
@@ -831,7 +838,7 @@ rebuild_jparse_err_files: jparse
 	${S} echo
 	${Q} ${RM} ${RM_V} -f test_jparse/test_JSON/bad_loc/*.err
 	-${Q} for i in test_jparse/test_JSON/./bad_loc/*.json; do \
-	    echo './jparse -v 0 -- "'$$i'" 2> "'$$i'.err"' ;  \
+	    echo './jparse -v 0 - "'$$i'" 2> "'$$i'.err"'; \
 	    ./jparse -v 0 -- "$$i" 2> "$$i.err" ;  \
 	done
 	${S} echo
@@ -1133,6 +1140,7 @@ clobber: legacy_clobber clean
 	${Q} ${RM} ${RM_V} -f ${BUILD_LOG} jparse_test.log
 	${Q} ${RM} ${RM_V} -f Makefile.orig
 	${Q} ${RM} ${RM_V} -f tags ${LOCAL_DIR_TAGS}
+	${Q} ${RM} ${RM_V} -f util_test.copy.c util.copy.o foobar
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ ending"
 
@@ -1147,7 +1155,7 @@ install: all test_jparse/Makefile install_man
 	${I} ${INSTALL} ${INSTALL_V} -d -m 0775 ${DEST_LIB}
 	${I} ${INSTALL} ${INSTALL_V} -m 0444 ${LIBA_TARGETS} ${DEST_LIB}
 	${I} ${INSTALL} ${INSTALL_V} -d -m 0775 ${DEST_INCLUDE}
-	${I} ${INSTALL} ${INSTALL_V} -m 0444 ${H_SRC_TARGETS} ${DEST_INCLUDE}
+	${I} ${INSTALL} ${INSTALL_V} -m 0444 ${H_SRC_TARGETS} ${BISONFILES} ${FLEXFILES} ${DEST_INCLUDE}
 	${I} ${INSTALL} ${INSTALL_V} -d -m 0775 ${DEST_DIR}
 	${I} ${INSTALL} ${INSTALL_V} -m 0555 ${SH_TARGETS} ${PROG_TARGETS} ${DEST_DIR}
 	${S} echo

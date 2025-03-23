@@ -3,6 +3,40 @@
  *
  * "Because sometimes we're all a little insane, some of us are a lot insane and
  * code is very often very insane." :-)
+ *
+ * Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This support file was co-developed in 2022-2025 by Cody Boone Ferguson and
+ * Landon Curt Noll:
+ *
+ *  @xexyl
+ *	https://xexyl.net		Cody Boone Ferguson
+ *	https://ioccc.xexyl.net
+ * and:
+ *	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+ *
+ * "Because sometimes even the IOCCC Judges need some help." :-)
+ *
+ * Share and enjoy! :-)
+ *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
 
@@ -21,6 +55,56 @@
  */
 const char *const soup_version = SOUP_VERSION;	/* library version format: major.minor YYYY-MM-DD */
 
+char *tar_paths[] =
+{
+    TAR_PATH_0,
+    TAR_PATH_0,
+    TAR_PATH_2,
+    NULL /* MUST BE LAST!! */
+};
+char *ls_paths[] =
+{
+    LS_PATH_0,
+    LS_PATH_1,
+    LS_PATH_2,
+    NULL /* MUST BE LAST!! */
+};
+char *fnamchk_paths[] =
+{
+    FNAMCHK_PATH_0,
+    FNAMCHK_PATH_1,
+    FNAMCHK_PATH_2,
+    NULL /* MUST BE LAST!! */
+};
+char *txzchk_paths[] =
+{
+    TXZCHK_PATH_0,
+    TXZCHK_PATH_1,
+    TXZCHK_PATH_2,
+    NULL /* MUST BE LAST!! */
+};
+char *chkentry_paths[] =
+{
+    CHKENTRY_PATH_0,
+    CHKENTRY_PATH_1,
+    CHKENTRY_PATH_2,
+    NULL /* MUST BE LAST!! */
+};
+char *make_paths[] =
+{
+    MAKE_PATH_0,
+    MAKE_PATH_1,
+    MAKE_PATH_2,
+    MAKE_PATH_3,
+    NULL /* MUST BE LAST!! */
+};
+char *rm_paths[] =
+{
+    RM_PATH_0,
+    RM_PATH_1,
+    RM_PATH_1,
+    NULL /* MUST BE LAST!! */
+};
 
 /*
  * ioccc_sanity_chks - perform IOCCC sanity checks
@@ -52,64 +136,283 @@ ioccc_sanity_chks(void)
 
 
 /*
- * find_utils - find tar, cp, ls, txzchk and fnamchk, chkentry utilities
+ * find_utils - find tools used by various tools
  *
  * given:
  *
- *	tar_flag_used	    - true ==> -t tar was used
- *	tar		    - if -t tar was not used and tar != NULL set *tar to to tar path
- *	cp_flag_used	    - true ==> -c cp was used
- *	cp		    - if -c cp was not used and cp != NULL set *cp to cp path
- *	ls_flag_used	    - true ==> -l ls was used
- *	ls		    - if -l ls was not used and ls != NULL set *ls to ls path
- *	txzchk_flag_used    - true ==> -T flag used
- *	txzchk		    - if -T txzchk was used and txzchk != NULL set *txzchk to path
- *	fnamchk_flag_used   - true ==> if fnamchk flag was used
- *	fnamchk		    - if fnamchk option used and fnamchk ! NULL set *fnamchk to path
- *	chkentry_flag_used  - true ==> -C chkentry was used	    -
- *	chkentry	    - if -C chkentry was used and chkentry != NULL set *chkentry to path
+ *      found_tar           - pointer to bool to set if tar is found
+ *	tar		    - if tar != NULL set *tar to to tar path
+ *      found_ls            - pointer to bool to set if ls is found
+ *	ls		    - if ls != NULL set *ls to ls path
+ *      found_txzchk        - pointer to bool to set if txzchk is found
+ *	txzchk		    - if txzchk != NULL set *txzchk to path
+ *      found_fnamchk       - pointer to bool to set if fnamchk is found
+ *	fnamchk		    - if fnamchk ! NULL set *fnamchk to path
+ *      found_chkentry      - pointer to bool to set if chkentry is found
+ *	chkentry	    - if chkentry != NULL set *chkentry to path
+ *      found_make          - pointer to bool to set if make is found
+ *	make                - if make != NULL set *make to path
+ *      found_rm            - pointer to bool to set if rm is found
+ *	rm                  - if rm != NULL set *rm to path
+ *
+ * NOTE: if a found_ boolean is NULL we will not check for the tool.
  */
 void
-find_utils(bool tar_flag_used, char **tar, bool cp_flag_used, char **cp, bool ls_flag_used,
-	   char **ls, bool txzchk_flag_used, char **txzchk, bool fnamchk_flag_used, char **fnamchk,
-	   bool chkentry_flag_used, char **chkentry)
+find_utils(bool *found_tar, char **tar, bool *found_ls, char **ls, bool *found_txzchk,
+        char **txzchk, bool *found_fnamchk, char **fnamchk, bool *found_chkentry, char **chkentry,
+        bool *found_make, char **make, bool *found_rm, char **rm)
 {
+    size_t i = 0; /* for iterating through paths arrays */
+
     /*
-     * guess where tar, cp and ls utilities are located
-     *
-     * If the user did not give a -t, -c and/or -l /path/to/x path, then look at
-     * the historic location for the utility.  If the historic location of the utility
-     * isn't executable, look for an executable in the alternate location.
-     *
-     * On some systems where /usr/bin != /bin, the distribution made the mistake of
-     * moving historic critical applications, look to see if the alternate path works instead.
+     * set up booleans if not NULL
      */
-    if (tar != NULL && !tar_flag_used && !is_exec(TAR_PATH_0) && is_exec(TAR_PATH_1)) {
-	*tar = TAR_PATH_1;
-	dbg(DBG_MED, "tar is not in historic location: %s : will use alternate location: %s", TAR_PATH_0, *tar);
+    if (found_tar != NULL) {
+        *found_tar = false;
     }
-    if (cp != NULL && !cp_flag_used && !is_exec(CP_PATH_0) && is_exec(CP_PATH_1)) {
-	*cp = CP_PATH_1;
-	dbg(DBG_MED, "cp is not in historic location: %s : will use alternate location: %s", CP_PATH_0, *cp);
+    if (found_ls != NULL) {
+        *found_ls = false;
     }
-    if (ls != NULL && !ls_flag_used && !is_exec(LS_PATH_0) && is_exec(LS_PATH_1)) {
-	*ls = LS_PATH_1;
-	dbg(DBG_MED, "ls is not in historic location: %s : will use alternate location: %s", LS_PATH_0, *ls);
+    if (found_txzchk != NULL) {
+        *found_txzchk = false;
     }
-
-    /* now do the same for our utilities: txzchk, fnamchk, and chkentry */
-    if (txzchk != NULL && !txzchk_flag_used && !is_exec(TXZCHK_PATH_0) && is_exec(TXZCHK_PATH_1)) {
-	*txzchk = TXZCHK_PATH_1;
-	dbg(DBG_MED, "using default txzchk path: %s", TXZCHK_PATH_1);
+    if (found_fnamchk != NULL) {
+        *found_fnamchk = false;
     }
-    if (fnamchk != NULL && !fnamchk_flag_used && !is_exec(FNAMCHK_PATH_0) && is_exec(FNAMCHK_PATH_1)) {
-	*fnamchk = FNAMCHK_PATH_1;
-	dbg(DBG_MED, "using default fnamchk path: %s", FNAMCHK_PATH_1);
+    if (found_chkentry != NULL) {
+        *found_chkentry = false;
     }
-    if (chkentry != NULL && !chkentry_flag_used && !is_exec(CHKENTRY_PATH_0) && is_exec(CHKENTRY_PATH_1)) {
-	*chkentry = CHKENTRY_PATH_1;
-	dbg(DBG_MED, "using default chkentry path: %s", CHKENTRY_PATH_1);
+    if (found_make != NULL) {
+        *found_make = false;
+    }
+    if (found_rm != NULL) {
+        *found_rm = false;
     }
 
+    /*
+     * guess where tools are
+     *
+     * First we will try resolving paths by just name. Then if that fails we'll
+     * try traditional locations and then if that fails, try alternate locations
+     * until we find a match.
+     *
+     * On some systems where /usr/bin != /bin, the distribution made the mistake
+     * of moving (pre-)historic critical applications, look to see if the
+     * alternate path works instead.
+     */
+
+    if (found_tar != NULL) {
+        if (tar != NULL && *tar != NULL && is_file(*tar) && is_exec(*tar)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *tar = strdup(*tar);
+            if (*tar == NULL) {
+                errp(55, __func__, "strdup(tar) failed");
+                not_reached();
+            }
+            *found_tar = true;
+        }
+        if (!*found_tar && tar != NULL) {
+            for (i = 0; tar_paths[i] != NULL; ++i) {
+                *tar = resolve_path(tar_paths[i]);
+                if (*tar != NULL) {
+                    *found_tar = true;
+                    break;
+                }
+            }
+        }
+        if (*found_tar) {
+            dbg(DBG_MED, "found tar at: %s", *tar);
+        }
+    } else if (tar != NULL) {
+        *tar = NULL;
+    }
+
+    if (found_ls != NULL) {
+        if (ls != NULL && *ls != NULL && is_file(*ls) && is_exec(*ls)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *ls = strdup(*ls);
+            if (*ls == NULL) {
+                errp(56, __func__, "strdup(ls) failed");
+                not_reached();
+            }
+            *found_ls = true;
+        }
+        if (!*found_ls && ls != NULL) {
+            for (i = 0; ls_paths[i] != NULL; ++i) {
+                *ls = resolve_path(ls_paths[i]);
+                if (*ls != NULL) {
+                    *found_ls = true;
+                    break;
+                }
+            }
+        }
+        if (*found_ls) {
+            dbg(DBG_MED, "found ls at: %s", *ls);
+        }
+    } else if (ls != NULL) {
+        *ls = NULL;
+    }
+
+    if (found_txzchk != NULL) {
+        if (txzchk != NULL && *txzchk != NULL && is_file(*txzchk) && is_exec(*txzchk)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *txzchk = strdup(*txzchk);
+            if (*txzchk == NULL) {
+                errp(57, __func__, "strdup(txzchk) failed");
+                not_reached();
+            }
+            *found_txzchk = true;
+        }
+        if (!*found_txzchk && txzchk != NULL) {
+            for (i = 0; txzchk_paths[i] != NULL; ++i) {
+                /*
+                 * try resolving the path
+                 */
+                *txzchk = resolve_path(txzchk_paths[i]);
+                if (*txzchk != NULL) {
+                    *found_txzchk = true;
+                    break;
+                }
+            }
+        }
+
+        if (*found_txzchk) {
+            dbg(DBG_MED, "found txzchk at: %s", *txzchk);
+        }
+    } else if (txzchk != NULL) {
+        *txzchk = NULL;
+    }
+
+    if (found_fnamchk != NULL) {
+        if (fnamchk != NULL && *fnamchk != NULL && is_file(*fnamchk) && is_exec(*fnamchk)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *fnamchk = strdup(*fnamchk);
+            if (*fnamchk == NULL) {
+                errp(58, __func__, "strdup(fnamchk)");
+                not_reached();
+            }
+            *found_fnamchk = true;
+        }
+        if (!*found_fnamchk && fnamchk != NULL) {
+            for (i = 0; fnamchk_paths[i] != NULL; ++i) {
+                *fnamchk = resolve_path(fnamchk_paths[i]);
+                if (*fnamchk != NULL) {
+                    *found_fnamchk = true;
+                    break;
+                }
+            }
+        }
+
+        if (*found_fnamchk) {
+            dbg(DBG_MED, "found fnamchk at: %s", *fnamchk);
+        }
+    } else if (fnamchk != NULL) {
+        *fnamchk = NULL;
+    }
+
+    if (found_chkentry != NULL) {
+        if (chkentry != NULL && *chkentry != NULL && is_file(*chkentry) && is_exec(*chkentry)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *chkentry = strdup(*chkentry);
+            if (*chkentry == NULL) {
+                errp(59, __func__, "strdup(chkentry) failed");
+                not_reached();
+            }
+            *found_chkentry = true;
+        }
+        if (!*found_chkentry && chkentry != NULL) {
+            for (i = 0; chkentry_paths[i] != NULL; ++i) {
+                /*
+                 * try resolving the path
+                 */
+                *chkentry = resolve_path(chkentry_paths[i]);
+                if (*chkentry != NULL) {
+                    *found_chkentry = true;
+                    break;
+                }
+            }
+        }
+
+        if (*found_chkentry) {
+            dbg(DBG_MED, "found chkentry at: %s", *chkentry);
+        }
+    } else if (chkentry != NULL) {
+        *chkentry = NULL;
+    }
+
+    if (found_make != NULL) {
+        if (make != NULL && *make != NULL && is_file(*make) && is_exec(*make)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *make = strdup(*make);
+            if (*make == NULL) {
+                errp(60, __func__, "strdup(make) failed");
+                not_reached();
+            }
+            *found_make = true;
+        }
+        if (!*found_make && make != NULL) {
+            for (i = 0; make_paths[i] != NULL; ++i) {
+                *make = resolve_path(make_paths[i]);
+                if (*make != NULL) {
+                    *found_make = true;
+                    break;
+                }
+            }
+        }
+
+        if (*found_make) {
+            dbg(DBG_MED, "found make at: %s", *make);
+        }
+    } else if (make != NULL) {
+        *make = NULL;
+    }
+
+    if (found_rm != NULL) {
+        if (rm != NULL && *rm != NULL && is_file(*rm) && is_exec(*rm)) {
+            /*
+             * we have to strdup() it
+             */
+            errno = 0; /* pre-clear errno for errp */
+            *rm = strdup(*rm);
+            if (*rm == NULL) {
+                errp(61, __func__, "strdup(rm) failed");
+                not_reached();
+            }
+            *found_rm = true;
+        }
+        if (!*found_rm && rm != NULL) {
+            for (i = 0; rm_paths[i] != NULL; ++i) {
+                *rm = resolve_path(rm_paths[i]);
+                if (*rm != NULL) {
+                    *found_rm = true;
+                    break;
+                }
+            }
+        }
+
+        if (*found_rm) {
+            dbg(DBG_MED, "found rm at: %s", *rm);
+        }
+    } else if (rm != NULL) {
+        *rm = NULL;
+    }
     return;
 }

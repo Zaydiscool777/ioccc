@@ -1,11 +1,32 @@
 /*
  * json_utf8 - JSON UTF-8 encoder/decoder
  *
- * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
+ * "Because ASCII text is too limited, even for JSON." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody
+ * Boone Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -16,6 +37,8 @@
  * "Share and Enjoy!"
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
+
+
 
 #include <string.h>
 #include <stdint.h>
@@ -53,18 +76,18 @@ utf8len(const char *str, int32_t surrogate)
 	x = surrogate;
 	if (x < 0x80) {
 	    len = 1;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x800) {
 	    len = 2;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x10000) {
 	    len = 3;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x110000) {
 	    len = 4;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else {
-	    warn(__func__, "%X: illegal value\n", x);
+	    warn(__func__, "%X: illegal value, len: %jd\n", x, (intmax_t)len);
 	    len = -1;
 	}
 
@@ -76,7 +99,7 @@ utf8len(const char *str, int32_t surrogate)
      */
     scanned = sscanf(str, "\\u%c%c%c%c", &xa, &xb, &xc, &xd);
     if (scanned != 4) {
-	warn(__func__, "did not find \\u followed by four HEX digits: %ju values: <%s>: %x %x %x %x", scanned, str,
+	warn(__func__, "did not find \\u followed by four HEX digits: %ju values: <%s>: %x %x %x %x", (uintmax_t)scanned, str,
 		xa, xb, xc, xd);
 	len = -1;
 
@@ -112,18 +135,18 @@ utf8len(const char *str, int32_t surrogate)
 	 */
 	if (x < 0x80) {
 	    len = 1;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x800) {
 	    len = 2;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x10000) {
 	    len = 3;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else if (x < 0x110000) {
 	    len = 4;
-	    dbg(DBG_VVHIGH, "%X length %d", x, len);
+	    dbg(DBG_VVHIGH, "%X length %jd", x, (intmax_t)len);
 	} else {
-	    warn(__func__, "%X: illegal value\n", x);
+	    warn(__func__, "%X: illegal value, len %jd\n", x, (intmax_t)len);
 	    len = -1;
 	}
     }

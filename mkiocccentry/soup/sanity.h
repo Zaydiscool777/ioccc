@@ -3,6 +3,40 @@
  *
  * "Because sometimes we're all a little insane, some of us are a lot insane and
  * code is very often very insane." :-)
+ *
+ * Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This support file was co-developed in 2022-2025 by Cody Boone Ferguson and
+ * Landon Curt Noll:
+ *
+ *  @xexyl
+ *	https://xexyl.net		Cody Boone Ferguson
+ *	https://ioccc.xexyl.net
+ * and:
+ *	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+ *
+ * "Because sometimes even the IOCCC Judges need some help." :-)
+ *
+ * Share and enjoy! :-)
+ *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
 
@@ -39,10 +73,8 @@
  * function prototypes
  */
 extern void ioccc_sanity_chks(void); /* all *_sanity_chks() functions should call this */
-extern void find_utils(bool tar_flag_used, char **tar, bool cp_flag_used, char **cp, bool ls_flag_used,
-	   char **ls, bool txzchk_flag_used, char **txzchk, bool fnamchk_flag_used, char **fnamchk,
-	   bool chkentry_flag_used, char **chkentry);
-
-
+extern void find_utils(bool *tar_found, char **tar, bool *found_ls, char **ls, bool *found_txzchk,
+        char **txzchk, bool *found_fnamchk, char **fnamchk, bool *found_chkentry, char **chkentry,
+        bool *found_make, char **make, bool *found_rm, char **rm);
 
 #endif /* INCLUDE_SANITY_H */

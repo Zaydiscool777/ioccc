@@ -3,9 +3,30 @@
  *
  * "Because grammar and syntax alone do not make a complete language." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -13,11 +34,11 @@
  *
  * "Because sometimes even the IOCCC Judges need some help." :-)
  *
- * The concept of the JSON semantics tables was developed by Landon Curt Noll.
- *
  * "Share and Enjoy!"
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
+
+
 
 #if !defined(INCLUDE_JSON_SEM_H)
 #    define  INCLUDE_JSON_SEM_H
@@ -111,6 +132,7 @@ struct json_sem
 		      unsigned int depth, struct json_sem *sem, struct json_sem_val_err **val_err);
 				/* JSON parse tree node validator, or NULL */
     char *name;			/* if type == JTYPE_MEMBER, match decoded name or NULL */
+    void *data;                 /* extra data if needed */
 };
 
 
@@ -171,7 +193,7 @@ extern void json_sem_zero_count(struct json_sem *sem);
 extern int json_sem_find(struct json *node, unsigned int depth, struct json_sem *sem);
 extern void json_sem_count_chk(struct json_sem *sem, struct dyn_array *count_err);
 extern uintmax_t json_sem_check(struct json *node, unsigned int max_depth, struct json_sem *sem,
-				struct dyn_array **pcount_err, struct dyn_array **pval_err);
+				struct dyn_array **pcount_err, struct dyn_array **pval_err, void *data);
 extern void free_count_err(struct dyn_array *count_err);
 extern void free_val_err(struct dyn_array *val_err);
 extern void fprint_count_err(FILE *stream, char const *prefix, struct json_sem_count_err *sem_count_err, char const *postfix);

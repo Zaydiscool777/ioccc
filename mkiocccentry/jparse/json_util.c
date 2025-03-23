@@ -3,9 +3,30 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -16,7 +37,6 @@
  * "Share and Enjoy!"
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
-
 
 #include <stdio.h>
 #include <string.h>
@@ -1082,7 +1102,7 @@ open_json_dir_file(char const *dir, char const *filename)
  * It is up to the caller to free the struct json if needed.
  *
  * This function does NOT walk the JSON parse tree, so it will
- * ignore links form this node to other JSON parse tree nodes.
+ * ignore links from this node to other JSON parse tree nodes.
  *
  * NOTE: If the pointer to allocated storage == NULL,
  *	 this function does nothing.
@@ -1489,7 +1509,11 @@ fprnumber(FILE *stream, char *prestr, struct json_number *item, char *midstr, ch
     /*
      * print struct json_number information
      *
-     * At -J 4 or higher, we print all struct json_number
+     * At -J 4 or higher, we print all struct json_number details.
+     *
+     * NOTE: see
+     * https://github.com/xexyl/jparse/blob/master/jparse_library_README.md for
+     * how to parse the string.
      */
     if (json_verbosity_level > JSON_DBG_MED) {
 
@@ -1529,6 +1553,11 @@ fprnumber(FILE *stream, char *prestr, struct json_number *item, char *midstr, ch
 			item->as_longdouble_int?"ldi":"");
     } else {
 
+     /*
+      * NOTE: see
+      * https://github.com/xexyl/jparse/blob/master/jparse_library_README.md for
+      * how to parse the string.
+      */
 	/* -J 3 */ fprint(stream, "%s%s%s%s%s%s%s",
 			PARSED_JSON_NODE(item)?"p":"",
 			CONVERTED_PARSED_JSON_NODE(item)?",":":",
@@ -1618,6 +1647,10 @@ fprstring(FILE *stream, struct json_string *item)
 
         /*
          * print string preamble
+         *
+         * NOTE: see
+         * https://github.com/xexyl/jparse/blob/master/jparse_library_README.md
+         * for how to parse the string.
          */
         fprint(stream, "\tlen{%s%s%s%s%s%s%s%s%s}: %ju\tvalue:\t",
                         PARSED_JSON_NODE(item)?"p":"",

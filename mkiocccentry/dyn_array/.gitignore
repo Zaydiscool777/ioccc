@@ -1,0 +1,12 @@
+*~
+.DS_Store
+._.DS_Store
+/Makefile.local
+/NOTES
+*.[ao]
+*.dSYM/
+dyn_test
+/.local.dir.tags
+/makefile.local
+.*.swp
+/tags

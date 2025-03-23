@@ -3,9 +3,30 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -16,6 +37,7 @@
  * "Share and Enjoy!"
  *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
+
 
 
 /* special comments for the seqcexit tool */
@@ -29,6 +51,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
+#include <locale.h>
 
 /*
  * jnum_chk - tool to check JSON number string conversions
@@ -49,28 +72,29 @@
 static const char * const usage_msg =
     "usage: %s [-h] [-v level] [-J level] [-V] [-q] [-S]\n"
     "\n"
-    "\t-h\t\tPrint help message and exit\n"
-    "\t-v level\tSet verbosity level (def level: %d)\n"
-    "\t-J level\tSet JSON verbosity level (def level: %d)\n"
-    "\t-V\t\tPrint version string and exit\n"
-    "\t-q\t\tQuiet mode (def: loud :-) )\n"
+    "\t-h\t\tprint help message and exit\n"
+    "\t-v level\tset verbosity level (def level: %d)\n"
+    "\t-J level\tset JSON verbosity level (def level: %d)\n"
+    "\t-V\t\tprint version strings and exit\n"
+    "\t-q\t\tquiet mode (def: loud :-) )\n"
     "\t\t\t    NOTE: -q will also silence msg(), warn(), warnp() if -v 0\n"
-    "\t-S\t\tStrict testing for all struct json_number elements\n"
+    "\t-S\t\tstrict testing for all struct json_number elements\n"
     "\t\t\t    (def: test only 8, 16, 32, 64 bit and max size signed and unsigned integer types)\n"
     "\t\t\t    (def: test floating point with match to only 1 part in 4.1943E+06)\n"
     "\n"
-    "\tNOTE: The -S mode is for informational purposes only, and may fail\n"
+    "\tNOTE: the -S mode is for informational purposes only, and may fail\n"
     "\t      on your system due to hardware and/or other system differences.\n"
     "\n"
     "Exit codes:\n"
     "    0\t\tall is OK\n"
     "    1\t\twithout -S given and JSON number conversion test suite failed\n"
     "    2\t\t-S given and JSON number conversion test suite failed\n"
-    "    3\t\t-h and help string printed or -V and version string printed\n"
+    "    3\t\t-h and help string printed or -V and version strings printed\n"
     "    4\t\tcommand line error\n"
     "    >=10\tinternal error\n"
     "\n"
     "%s version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -93,6 +117,11 @@ main(int argc, char *argv[])
     size_t len = 0;		/* length of str */
     int arg_count = 0;		/* number of args to process */
     int i;
+
+    /*
+     * use default locale based on LANG
+     */
+    (void) setlocale(LC_ALL, "");
 
     /*
      * parse args
@@ -124,8 +153,9 @@ main(int argc, char *argv[])
 		not_reached();
 	    }
 	    break;
-	case 'V':		/* -V - print version and exit */
+	case 'V':		/* -V - print version strings and exit */
 	    print("%s version: %s\n", JNUM_CHK_BASENAME, JNUM_CHK_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -787,7 +817,7 @@ usage(int exitcode, char const *prog, char const *str)
 	fprintf_usage(DO_NOT_EXIT, stderr, "%s", str);
     }
     fprintf_usage(exitcode, stderr, usage_msg, prog, DBG_DEFAULT, JSON_DBG_DEFAULT, JNUM_CHK_BASENAME, JNUM_CHK_VERSION,
-	    JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+	    JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

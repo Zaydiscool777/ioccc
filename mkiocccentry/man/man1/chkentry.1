@@ -9,7 +9,7 @@
 .\" "Share and Enjoy!"
 .\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 .\"
-.TH chkentry 1 "19 May 2024" "chkentry" "IOCCC tools"
+.TH chkentry 1 "02 March 2025" "chkentry" "IOCCC tools"
 .SH NAME
 .B chkentry
 \- check JSON files in an IOCCC entry
@@ -21,62 +21,61 @@
 .RB [\| \-J
 .IR level \|]
 .RB [\| \-q \|]
-.I info.json
-.I auth.json
+.RB [\| \-i
+.IR path \|]
+.RB [\| \-P \|]
+.RB [\| \-w \|]
+.I directory
 .SH DESCRIPTION
 .PP
-Validates the
-.I .info.json
+.BR chkentry (1)
+runs a number of validation checks on an IOCCC submission or winning entry directory.
+Depending on the options, it will validate the
+.B .auth.json
 and/or
-.I .auth.json
-of an IOCCC entry.
-In the two argument form,
-.I info.JSON
-is the path of an IOCCC entry information JSON file, and
-.I auth.JSON
-is the path of an IOCCC entry author JSON file.
-If
-.B info.JSON
-is
-.I .
-(dot), then this file is ignored.
-If
-.B auth.JSON
-is
-.I .
-(dot), then this file is ignored.
-In the one argument form,
-.I submission_dir
-is assumed to be a directory containing both
-.I .info.json
-and
-.I .auth.json
-files.
+.B .info.json
+files, as well as checking the permissions of files and directories (unless the
+.B \-P
+option is used) and, if the
+.B .info.json
+file is not ignored, it will compare the manifest with the files in the directory, unless that file has been explicitly ignored with the
+.BI \-i\  path
+option.
+In winning entry mode (the
+.B \-w
+option), some files must exist whereas others may not exist, depending on the
+.BI \-i\  path
+option; otherwise, without
+.BR \-w ,
+a different set of files must exist and must not exist, again depending on the
+.BI \-i\  path
+option.
+.PP
+In either case, even if the manifest is being ignored, it will verify that the files in the directories are valid permissions (again, unless it's an ignored path or the
+.B \-P
+option is used), whether specific files are missing (unless it was ignored) and if specific files in the directory are not, by name, allowed (unless it was ignored).
+It will also verify that the filenames are sane, relative paths, in the context of the IOCCC rules, at least when not in winning entry mode and if not ignored.
 .PP
 As a sanity check, the
 .BR mkiocccentry (1)
 program executes
 .B chkentry
-after the
-.I .info.json
+after forming the
+.B .auth.json
 and
-.I .auth.json
-files have been created, once per file, testing that everything is well.
+.BR .info.json ,
+in order to test that everything is in order.
 If
 .BR mkiocccentry (1)
 sees a 0 exit status, then all is well.
 For a non\-zero exit code, the tool aborts because any problems detected by
-.B chkentry
+.BR chkentry (1)
 based on what
 .BR mkiocccentry (1)
-wrote into
-.I .info.json
-and/or
-.I .auth.json
-indicates there is a serious mismatch between what
+did indicates there is a serious mismatch between what
 .BR mkiocccentry (1)
 is doing and what
-.B chkentry
+.BR chkentry (1)
 expects.
 .PP
 .SH OPTIONS
@@ -100,13 +99,24 @@ Print version and exit.
 .B \-q
 Set quiet mode.
 Silences msg(), warn(), warnp() if verbosity level is 0.
+.TP
+.BI \-i\  path
+Ignore a path.
+This option may be used more than once but is only meant for the judges.
+.TP \-P
+Ignore permissions of files and directories.
+This option is for the judges.
+.TP
+.B \-w
+Perform winning entry tests instead of submission tests.
+This option is for the judges.
 .SH EXIT STATUS
 .TP
 0
 all OK
 .TQ
 1
-JSON files(s) are valid JSON but one or more semantic checks failed
+a JSON file is not valid JSON, a semantics test failed or some other test failed
 .TQ
 2
 .B \-h
@@ -117,15 +127,21 @@ and version string printed
 3
 command line error
 .TQ
-4
-file(s) not valid JSON and no semantic checks were performed
-.TQ
 >=10
 internal error
 .SH NOTES
-.B chkentry
-is primarily used by other tools (not humans) but you may wish to test your entry JSON files manually if you're trying something clever.
+.PP
+.BR chkentry (1)
+is primarily used by other tools (not humans) but you may wish to test your submission directory manually if you're trying something clever.
 It would be a good idea to note why you think it's clever.
+.PP
+Note that if you are testing that your submission directory is valid, you should
+.B NOT
+use either the
+.B \-w
+or
+.BI \-i\  path
+option as these exist for the judges only and not when validating the directory is a valid submission directory.
 .SH BUGS
 .PP
 More than 0 humans work on it! :)
@@ -191,30 +207,13 @@ Run the tool on an IOCCC entry located in the directory
 .sp
 .RS
 .ft B
- ./chkentry submit.1d5E8ac2\-2cF5\-48FB\-aD81\-3210d16af8ca\-0.1652598666/{.info,.auth}.json
-.ft R
-.RE
-.PP
-Run the tool on just the IOCCC entry information JSON file
-.IR test/info.JSON :
-.sp
-.RS
-.ft B
- ./chkentry test/info.JSON .
-.ft R
-.RE
-.PP
-Run the tool on just the IOCCC entry author JSON file
-.IR test/auth.JSON :
-.sp
-.RS
-.ft B
- ./chkentry . test/auth.JSON
+ chkentry submit.1d5E8ac2\-2cF5\-48FB\-aD81\-3210d16af8ca\-0.1652598666
 .ft R
 .RE
 .SH SEE ALSO
 .PP
-.BR chkentry_test (8)
-.BR mkiocccentry (1)
+.BR chkentry_test (8),
+.BR mkiocccentry (1),
+.BR txzchk (1)
 and
 .BR jparse (1)

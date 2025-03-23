@@ -1,11 +1,32 @@
 /*
- * version - official jparse API and tool versions
+ * version - official jparse API, parser and utils versions
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody
+ * Boone Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -21,8 +42,12 @@
 #    define  INCLUDE_JPARSE_VERSION_H
 
 /*
- * NOTE: only the repo release version, the jparse tool and the JSON parser
- * versions are here. For the version of the other tools, see their header file.
+ * NOTE: only the repo release version, the jparse tool version, the jparse
+ * utils (util.c, not json_util.c, see below) version and the JSON parser
+ * version are here.  For the version of the other tools, see their header file.
+ *
+ * NOTE: the json_util.c is part of the jparse library version so when that code
+ * is updated the JPARSE_LIBRARY_VERSION should be updated.
  */
 
 /*
@@ -30,17 +55,22 @@
  *
  * NOTE: this should match the latest Release string in CHANGES.md
  */
-#define JPARSE_REPO_VERSION "2.1.10 2024-12-31"		/* format: major.minor YYYY-MM-DD */
+#define JPARSE_REPO_VERSION "2.3.8 2025-03-15"		/* format: major.minor YYYY-MM-DD */
 
 /*
  * official jparse version
  */
-#define JPARSE_VERSION "1.2.8 2024-12-31"		/* format: major.minor YYYY-MM-DD */
+#define JPARSE_TOOL_VERSION "2.0.1 2025-03-15"		/* format: major.minor YYYY-MM-DD */
 
 /*
  * official JSON parser version
  */
-#define JPARSE_LIBRARY_VERSION "2.2.3 2024-12-31"	/* library version format: major.minor YYYY-MM-DD */
+#define JPARSE_LIBRARY_VERSION "2.3.0 2025-02-28"	/* library version format: major.minor YYYY-MM-DD */
+
+/*
+ * official utility functions (util.c) version
+ */
+#define JPARSE_UTILS_VERSION "2.0.8 2025-03-15"         /* format: major.minor YYYY-MM-DD */
 
 
 #endif /* INCLUDE_JPARSE_VERSION_H */

@@ -4,9 +4,27 @@
 #
 # "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
 #
-# This JSON parser was co-developed in 2022 by:
+# Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
-#	@xexyl
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
+#
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+#
+#  @xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 # and:
@@ -14,8 +32,9 @@
 #
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
-# "Share and Enjoy!"
-#	--  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+# Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+#
 ####
 
 
@@ -153,18 +172,6 @@ MAKE_CD_Q= --no-print-directory
 #
 # This repo supports c17 and later.
 #
-# NOTE: at one point we used -std=gnu11 because there were a few older systems
-#       in late 2021 that did not have compilers that (yet) supported gnu17.
-#       While there may be even more out of date systems that do not support
-#       gnu11, we have to draw the line somewhere. Besides, one of those systems
-#       reaches its EOL on 30 June 2024 and that's three days away at this
-#       point.
-#
-#	--------------------------------------------------
-#
-#	^^ the line is above :-)
-#
-#C_STD= -std=gnu11
 C_STD= -std=gnu17
 
 # optimization and debug level
@@ -174,7 +181,7 @@ C_OPT= -O3
 
 # Compiler warnings
 #
-WARN_FLAGS= -Wall -Wextra -Wno-char-subscripts
+WARN_FLAGS= -Wall -Wextra -Wformat -Wno-char-subscripts
 #WARN_FLAGS= -Wall -Wextra -Werror
 
 # special compiler flags
@@ -220,7 +227,7 @@ LESS_PICKY_HSRC=
 
 # all shell scripts
 #
-SH_FILES= jparse_test.sh jstr_test.sh
+SH_FILES= prep.sh jparse_test.sh jstr_test.sh
 
 
 ######################
@@ -660,6 +667,7 @@ clobber: legacy_clobber clean
 	${Q} ${RM} ${RM_V} -f ${TARGETS}
 	${Q} ${RM} ${RM_V} -f jparse_test.log chkentry_test.log txzchk_test.log
 	${Q} ${RM} ${RM_V} -f tags ${LOCAL_DIR_TAGS}
+	${Q} ${RM} ${RM_V} -rf a b
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ ending"
 

@@ -3,10 +3,30 @@
  *
  * "Because grammar and syntax alone do not make a complete language." :-)
  *
- * The concept of this file and the JSON parser were both co-developed in 2022
- * by:
+ * Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+ * All Rights Reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This tool and the JSON parser were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -19,6 +39,8 @@
  * number of files in the top level directory (thus the name of this directory).
  * We might have even left you all some delicious soup somewhere here. :-)
  *
+ * Share and enjoy! :-)
+ *     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
  */
 
 
@@ -80,20 +102,36 @@
  * paths to utilities the IOCCC tools use (including our own tools fnamchk,
  * txzchk, chkentry, etc.)
  */
-#define TAR_PATH_0 "/usr/bin/tar"		    /* historic path for tar */
-#define TAR_PATH_1 "/bin/tar"			    /* alternate tar path for some systems where /usr/bin/tar != /bin/tar */
-#define CP_PATH_0 "/bin/cp"			    /* historic path for cp */
-#define CP_PATH_1 "/usr/bin/cp"			    /* alternate cp path for some systems where /bin/cp != /usr/bin/cp */
-#define LS_PATH_0 "/bin/ls"			    /* historic path for ls */
-#define LS_PATH_1 "/usr/bin/ls"			    /* alternate ls path for some systems where /bin/ls != /usr/bin/ls */
-#define FNAMCHK_PATH_0 "./test_ioccc/fnamchk"	    /* default path to fnamchk tool */
-#define FNAMCHK_PATH_1 "/usr/local/bin/fnamchk"	    /* default path to fnamchk tool if installed */
-#define TXZCHK_PATH_0 "./txzchk"		    /* default path to txzchk tool */
-#define TXZCHK_PATH_1 "/usr/local/bin/txzchk"	    /* default path to txzchk tool if installed */
-#define CHKENTRY_PATH_0 "./chkentry"		    /* default path to chkentry tool */
-#define CHKENTRY_PATH_1 "/usr/local/bin/chkentry"   /* default path to chkentry tool if installed */
-#define JPARSE_PATH_0 "./jparse/jparse"		    /* default path to jparse */
-#define JPARSE_PATH_1 "/usr/local/bin/jparse"	    /* default path to jparse tool if installed */
+#define TAR_PATH_0 "tar"                            /* for $PATH search */
+#define TAR_PATH_1 "/usr/bin/tar"		    /* historic path for tar */
+#define TAR_PATH_2 "/bin/tar"			    /* alternate tar path for some systems where /usr/bin/tar != /bin/tar */
+#define LS_PATH_0 "ls"                              /* for $PATH search */
+#define LS_PATH_1 "/bin/ls"			    /* historic path for ls */
+#define LS_PATH_2 "/usr/bin/ls"			    /* alternate ls path for some systems where /bin/ls != /usr/bin/ls */
+#define FNAMCHK_PATH_0 "./test_ioccc/fnamchk"	    /* path to fnamchk tool if not installed */
+#define FNAMCHK_PATH_1 "fnamchk"                    /* for $PATH search */
+#define FNAMCHK_PATH_2 "/usr/local/bin/fnamchk"	    /* default path to fnamchk tool if installed */
+#define TXZCHK_PATH_0 "./txzchk"		    /* path to txzchk tool if not installed */
+#define TXZCHK_PATH_1 "txzchk"                      /* for $PATH search */
+#define TXZCHK_PATH_2 "/usr/local/bin/txzchk"	    /* default path to txzchk tool if installed */
+#define CHKENTRY_PATH_0 "./chkentry"		    /* path to chkentry tool if not installed */
+#define CHKENTRY_PATH_1 "chkentry"                  /* for $PATH search */
+#define CHKENTRY_PATH_2 "/usr/local/bin/chkentry"   /* default path to chkentry tool if installed */
+#define MAKE_PATH_0 "gmake"                          /* for $PATH search */
+#define MAKE_PATH_1 "make"                          /* for $PATH search */
+#define MAKE_PATH_2 "/usr/bin/make"                 /* default path to make tool */
+#define MAKE_PATH_3 "/bin/make"                     /* in case /usr/bin/make doesn't work */
+#define RM_PATH_0 "rm"                              /* for $PATH search */
+#define RM_PATH_1 "/bin/rm"                         /* default path to rm tool */
+#define RM_PATH_2 "/usr/bin/rm"                     /* in case /bin/rm doesn't work */
+
+extern char *tar_paths[];
+extern char *ls_paths[];
+extern char *fnamchk_paths[];
+extern char *txzchk_paths[];
+extern char *chkentry_paths[];
+extern char *make_paths[];
+extern char *rm_paths[];
 
 
 /*

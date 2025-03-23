@@ -1,0 +1,8 @@
+*.a
+*.o
+.*.swp
+.DS_Store
+._.DS_Store
+.git
+.github
+.local.dir.tags

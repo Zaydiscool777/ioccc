@@ -4,7 +4,7 @@
  *	"You are not expected to understand this" :-)
  *
  *	Public Domain 1992, 2015, 2018, 2019, 2021 by Anthony Howe.  All rights released.
- *	With IOCCC mods in 2019-2023 by chongo (Landon Curt Noll) ^oo^
+ *	With IOCCC mods in 2019-2023, 2025 by chongo (Landon Curt Noll) ^oo^
  *
  * SYNOPSIS
  *
@@ -27,17 +27,15 @@
  *
  * DESCRIPTION
  *
- *	By default,the Rule 2b count is written to stdout.
+ *	By default, the Rule 2b count is written to stdout.
  *	If the debug level is > 0, then the Rule 2a, Rule 2b,
  *	and keyword count is written to stdout instead.
  *
- *	The entry's gross size in bytes must be less than equal to 4096
- *	bytes in length.
+ *	The entry's gross size in bytes must be less than equal to the
+ *	RULE_2A_SIZE value as defined in soup/limit_ioccc.h.
  *
- *	The entry's net size in bytes must be less than equal to 2503
- *	bytes.  FYI: 2503 is largest prime that can be expressed as the sum
- *	of three different 3-decimal digit zeroless palindromic primes.
- *	(2503 = 787 + 797 + 919)  The net size is computed as follows:
+ *	The entry's net size in bytes must be less than equal to the
+ *	RULE_2B_SIZE value as defined in soup/limit_ioccc.h.
  *
  *	The size tool counts most C reserved words (keyword, secondary,
  *	and selected preprocessor keywords) as 1.  The size tool counts all
@@ -63,6 +61,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <locale.h>
 
 #if defined(MKIOCCCENTRY_USE)
 /*
@@ -70,6 +69,7 @@
  */
 #include "soup/iocccsize_err.h"
 #include "soup/limit_ioccc.h"
+#include "soup/location.h"
 #else /* MKIOCCCENTRY_USE */
 #include "iocccsize_err.h"
 #endif /* MKIOCCCENTRY_USE */
@@ -89,7 +89,7 @@ static char usage0[] =
 "\t-V\t\tprint version and exit\n"
 "\n";
 static char usage1[] =
-"\tBy default,the Rule 2b count is written to stdout.\n"
+"\tBy default, the Rule 2b count is written to stdout.\n"
 "\tIf the debug level is > 0, then the Rule 2a, Rule 2b,\n"
 "\tand keyword count is written to stdout instead.\n"
 "\n"
@@ -100,7 +100,7 @@ static char usage1[] =
 "     3   -V used and version printed\n"
 "     4   invalid command line\n"
 "     6   there is no Rule 6!\n"
-" >= 10   some internal error occurred";
+" >= 10   some internal error occurred\n";
 
 
 int
@@ -110,6 +110,11 @@ main(int argc, char **argv)
 	FILE *fp = stdin;		/* stream from which to determine sizes */
 	RuleCount count;		/* rule_count() processing results */
 	int ch;
+
+#if defined(MKIOCCCENTRY_USE)
+	/* IOCCC requires use of C locale */
+	set_ioccc_locale();
+#endif /* MKIOCCCENTRY_USE */
 
 	while ((ch = getopt(argc, argv, "6ihv:aV")) != -1) {
 		switch (ch) {
@@ -180,16 +185,16 @@ main(int argc, char **argv)
 	/*
 	 * issue warnings
 	 */
-	if (count.char_warning) {
+	if (1 < verbosity_level && 0 < count.char_warning) {
 		iocccsize_warnx("Warning: character(s) with high bit set found! Be careful you don't violate rule 13!");
 	}
-	if (count.nul_warning) {
+        if (1 < verbosity_level && count.nul_warning) {
 		iocccsize_warnx("Warning: NUL character(s) found! Be careful you don't violate rule 13!");
 	}
 	if (count.trigraph_warning) {
 		iocccsize_warnx("Warning: unknown or invalid trigraph(s) found! Is that a bug in, or a feature of your code?");
 	}
-	if (count.wordbuf_warning) {
+        if (1 < verbosity_level && 0 < count.wordbuf_warning) {
 		iocccsize_warnx("Warning: word buffer overflow! Is that a bug in, or a feature of your code?");
 	}
 	if (count.ungetc_warning) {

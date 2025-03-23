@@ -9,80 +9,107 @@
 .\" "Share and Enjoy!"
 .\"     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 .\"
-.TH mkiocccentry 1 "12 July 2024" "mkiocccentry" "IOCCC tools"
+.TH mkiocccentry 1 "10 March 2025" "mkiocccentry" "IOCCC tools"
 .SH NAME
 .B mkiocccentry
 \- make an IOCCC compressed tarball for an IOCCC entry
 .SH SYNOPSIS
 .B mkiocccentry
 .RB [\| options \|]
-.I work_dir
-.I prog.c
-.I Makefile
-.I remarks.md
-.RI [\| file
-.IR ... \|]
+.I workdir
+.I topdir
 .SH DESCRIPTION
 .B mkiocccentry
-gathers your source file, Makefile, remarks as well as any other files and creates an XZ compressed tarball.
-The tool runs
-.B iocccsize
-on your
-.I prog.c
-and it also runs tests on the
-.IR Makefile \|,
-the
-.IR remarks.md
-and any extra files as well to verify that everything seems in order.
-You can ignore the warnings except that the
-.I Makefile
-cannot be empty.
-.PP
-Under the
-.I work_dir
-.B mkiocccentry
-will create an entry directory (based on the IOCCC contestant ID and entry number) that the program will copy the files to in order to create the tarball.
-If the entry directory already exists the program will tell you to move it or delete it.
-The program does
-.B NOT
-delete it for you.
-.PP
-Before forming the tarball,
-.B mkiocccentry
-will ask you for information about your entry including the number of authors and various information about the author(s).
-Once all the information has been collected it will copy the files to the entry directory under the
-.IR work_dir \|.
-At this point it will create the
-.I .info.json
+creates a tarball suitable to be submitted to the IOCCC, based on the rules and guidelines (mentioned in the
+.B NOTES
+section below).
+The
+.I topdir
+is the directory where the files (and if desired directories) to be added to the submission tarball, including the mandatory
+.BR prog.c ,
+.BR Makefile
 and
-.I .auth.json
-files with information about the entry and information about the authors (which is for winning entries).
+.BR remarks.md
+are.
+The
+.I workdir
+is a directory where your submission directory (named based on the contestant ID and submission slot) will be created.
+The files (and if necessary) directories will be copied to this submission directory and many checks will be done; some failed checks you may override but others are fatal errors.
 .PP
-After each file is formed it will run
-.BR chkentry (1)
-on the file. If
-.BR chkentry (1)
-exits with non\-zero
-.B mkiocccentry
-will abort because any problems detected by
-.BR chkentry (1)
-based on what
-.B mkiocccentry
-wrote indicates that there is a serious mismatch between what
-.B mkiocccentry
-is doing and what
-.BR chkentry (1)
-expects.
+If the mandatory files do not exist or are not regular readable files in the
+.I topdir
+it is an error.
+If
+.B remarks.md
+is empty (i.e. size 0) it is an error.
+If
+.B Makefile
+is empty (i.e. size 0) it is an error.
 .PP
-After forming the tarball
+This tool uses the code from
+.BR iocccsize (1)
+on your
+.B prog.c
+file.
+The
+.BR mkiocccentry (1)
+tool verifies that the
+.B Makefile
+is not of size 0 and runs a number of checks on it, in particular looking for specific rules (and insisting that the
+.B all
+rule is first); if the size is 0 it is an error but you may override the other warnings with the risk of violating the rules.
+.BR mkiocccentry (1)
+also verifies that the
+.B remarks.md
+file is not of size 0; if it is it is an error.
+.PP
+Assuming the mandatory files are found, you will be presented with lists of directories/files/symlinks that will be ignored as well as directories and files to be made and copied over, giving you the chance to confirm that everything is in order.
+Assuming it is, any directories required will be made in the submission directory.
+Once this is done the files will be copied to their correct directories.
+You will then be given a chance to verify that everything is okay.
+.PP
+Assuming it is you will be asked information about your submission and the author(s).
+Once this is done and you have confirmed the author details are correct,
+.BR mkiocccentry (1)
+will create the mandatory
+.BR .info.json
+and
+.BR chkentry (1)
+will be executed on it.
+Assuming all is okay the mandatory
+.BR .auth.json
+file will be created and
+.BR chkentry (1)
+will be run on it.
+If everything goes okay you will be presented with a directory listing of the submission directory again and asked to confirm everything is well.
+If it is the submission tarball will be formed and then
 .BR txzchk (1)
-is run which verifies that the tarball is okay (\c
-.BR txzchk (1)
-in turn will call
-.BR fnamchk (1)\c
+(which in turn runs
+.BR fnamchk (1)
+on the tarball) will be run on it.
+.PP
+There are many rules and checks done in the above process that you may find in more detail at:
+\<https://www.ioccc.org/faq.html#mkiocccentry_process\>.
+.PP
+Because some might want or need to update an entry there is functionality to write your answers to a file so that you can feed the program the answers quickly; see below.
+Because some might want some files or directories in their topdir that they don't want to submit but would normally be included in the tarball by
+.BR mkiocccentry (1),
+the
+option
+.BI \-I\  path
+was added to ignore a path.
+This option can be used more than once and the
+.I path
+is the path under the topdir (in other words, if the topdir has a file called
+.BR foo ,
+you would use
+.BI \-I\  foo
+instead of
+.BI \-I\  topdir/foo\c
 \&).
-.PP
-Because some might want or need to update an entry there is functionality to write your answers to a file so that you can feed the program the answers quickly.
+See the
+.B EXAMPLES
+section below for an example.
 .SH OPTIONS
 .TP
 .B \-h
@@ -92,8 +119,64 @@ Show help and exit.
 Set verbosity level to
 .IR level .
 .TP
+.B \-J\  level
+Set verbosity level for the internal JSON library (\c
+.BR jparse (3)).
+The default JSON verbosity level is 0, which produces no JSON debug messages.
+.TP
+.B \-q
+Quiet mode (def: loud :\-) ).
+This will also silence the functions
+.BR msg (3),
+.BR warn (3)
+and
+.BR warnp (3)
+if verbosity level is 0 (i.e. if
+.BI \-v\  0
+was used or if
+.B \-v
+was not used at all).
+.TP
 .B \-V
 Show version and exit.
+.TP
+.B \-W
+Ignore all warnings.
+When this option is specified the program warns you that you've ignored all warnings (therefore not ignoring all warnings :) ), informing you that the judges will not ignore all warnings.
+Use with
+.B EXTREME CAUTION
+as ignoring warnings may produce a submission that violates the IOCCC rules
+and/or conflicts with the IOCCC guidelines.
+.br
+See:
+.ft B
+\<https://www.ioccc.org/next/index.html\>
+.ft R
+for information on the IOCCC rules and guidelines.
+.TP
+.B \-E
+Exit 1 after the first warning.
+This option conflicts with the
+.B \-W
+option.
+.TP
+.B \-y
+Answer yes to most questions.
+Use with
+.B EXTREME CAUTION
+as answering yes to everything may produce a submission that violates the IOCCC rules
+and/or conflicts with the IOCCC guidelines.
+.br
+See:
+.ft B
+\<https://www.ioccc.org/next/index.html\>
+.ft R
+for information on the IOCCC rules and guidelines.
+.TP
+.B \-Y
+Force answer yes to questions even when you would otherwise be prompted.
+This is mostly for the test-suite and in particular for the reading of answers from a file.
+That is because when scanning the topdir and making directories and copying files from the topdir to the submission directory and checking that the directory ended up okay, we do prompt the user again.
 .TP
 .BI \-t\  tar
 Set path to
@@ -107,18 +190,6 @@ checks
 .I /usr/bin/tar
 and
 .I /bin/tar
-if this option is not specified.
-.TP
-.BI \-c\  cp
-Set
-.B cp
-path to
-.IR cp .
-.B mkiocccentry
-checks
-.I /usr/bin/cp
-and
-.I /bin/cp
 if this option is not specified.
 .TP
 .BI \-l\  ls
@@ -140,16 +211,25 @@ path to
 .IR txzchk .
 .B mkiocccentry
 checks
-.I ./txzchk
-and
 .I /usr/local/bin/txzchk
+and
+.I ./txzchk
 if this option is not specified.
 .TP
 .B \-e
 Pass
 .B \-e
 to
-.BR txzchk (1).
+.BR txzchk (1)
+(entertainment mode).
+.TP
+.BI \-f\  feathers
+Pass
+.BI \-f\  feathers
+to
+.BR txzchk (1)
+(used by
+.BR \-e ).
 .TP
 .BI \-F\  fnamchk
 Set
@@ -158,9 +238,9 @@ path to
 .IR fnamchk .
 .B mkiocccentry
 checks
-.I ./fnamchk
-and
 .I /usr/local/bin/fnamchk
+and
+.I ./test_ioccc/fnamchk
 if this option is not specified.
 .TP
 .BI \-C\  chkentry
@@ -170,9 +250,21 @@ path to
 .I chkentry.
 .B mkiocccentry
 checks
-.I ./chkentry
-and
 .I /usr/local/bin/chkentry
+and
+.I ./chkentry
+if this option is not specified.
+.TP
+.BI \-m\  make
+Set
+.B make
+path to
+.I make.
+.B mkiocccentry
+checks
+.I /usr/bin/make
+and
+.I /bin/make
 if this option is not specified.
 .TP
 .BI \-a\  answers
@@ -201,23 +293,117 @@ This option cannot be used with
 or
 .B \-A\
 \&.
-.TP
-.B \-W
-Ignore all warnings.
-When this option is specified the program warns you that you've ignored all warnings (therefore not ignoring all warnings :) ), informing you that the judges will not ignore all warnings.
-.TP
+This option implies
 .B \-y
-Answer yes to most questions.
-Use with
-.B EXTREME CAUTION!
+and disables some messages as well.
+However you will still be prompted to verify files and directories are okay.
 .TP
-.B \-q
-Quiet mode.
-Silence msg(), warn(), warnp() if verbosity level is 0.
+.BI \-u\  uuidfile
+Read UUID from a text file.
+If this file cannot be read or does not have a valid UUID by itself,
+.BR mkiocccentry (1)
+will prompt you as usual.
+This option cannot be used with
+.BI \-U\  UUID
+or
+.BI \-s\  seed
+or
+.BI \-i\  answers
+or
+.BR \-d .
+.TP
+.BI \-U\  UUID
+Set UUID to
+.IR UUID .
+If this an invalid UUID
+.BR mkiocccentry (1)
+will prompt you as usual.
+This option cannot be used with
+.BI \-u\  uuidfile
+or
+.BI \-s\  seed
+or
+.BI \-i\  answers
+or
+.BR \-d .
+.TP
+.BI \-s\  seed
+Generate pseudo-random answers to the questions
+for testing an dry-run purposes.
+The pseudo-random answers are written to
+the file
+.IR random_answers. seed
+and then processed as if
+.BI \-i\  random_answers.seed
+had been used.
+This mode is intended as a
+.B dry run
+only, allowing a submitter to quickly check if there are
+any issues with the files they intend to submit.
+The result is for
+.B TEST PURPOSES ONLY
+as the result is
+.B NOT SUITABLE
+for submitting to an open IOCCC.
+.sp
+The pseudo-random answers are generated via
+calls to
+.BR random (3),
+generating strings of pseudo-random lengths and values that conform to input requirements.
+The
+.I seed
+is supplied to
+.BR srandom (3)
+with an offset by a constant and 31-bit mask.
+The
+.I seed
+must be an non-negative integer.
+Useful values of
+.I seed
+are integers between 0 and 2147483647 inclusive.
+.br
+The use of
+.BI \-s\  seed
+implies the use of
+.B \-y
+and
+.BR \-E .
+.TP
+.B \-d
+Alias for
+.BR \-s\  21701.
+.TP
+.BI \-I\  path
+Ignores a path from in the
+.BR topdir .
+This option can be specified multiple times.
+If used
+.BR mkiocccentry (1)
+will present you with a list of ignored paths to confirm everything is OK, unless you have used the
+.B \-i
+option.
+If the path is a directory
+.BR mkiocccentry (1)
+will not traverse it.
+.TP
+.BI \-r\  rm
+Set path to
+.BR rm (1)
+if
+.B \-x
+used.
+.TP
+.B \-x
+Force delete submission directory if it already exists.
+Use with
+.BR CARE !
 .SH EXIT STATUS
 .TP
 0
 all OK
+.TQ
+1
+The \-E option as used and some warning was issued
 .TQ
 2
 .B \-h
@@ -228,11 +414,38 @@ and version string printed
 3
 invalid command line, invalid option or option missing an argument
 .TQ
+4
+something went wrong in scanning, copying or verifying
+.I topdir
+and
+.I workdir
+.TQ
+5
+user says something about the
+.I topdir
+or
+.I workdir
+is not okay
+.TQ
 >= 10
 internal error
+.SH NOTES
+.PP
+The rules can be found at:
+\<https://www.ioccc.org/next/rules.html\>.
+.br
+The guidelines can be found at:
+\<https://www.ioccc.org/next/guidelines.html\>.
 .SH BUGS
 .PP
 More than 0 humans work on it! :)
+.PP
+Make sure you're using the most recent version of all tools.
+This is important because if a tool is out of date you risk breaking the rules.
+Furthermore, if you use this tool outside the repo directory (providing a path to it), make certain to provide the program the options so that it can locate the correct version of the other tools as otherwise you will likely run into problems.
+For instance, if you have not installed the tools it would not be able to locate the tools.
+But even if you did install them if you have not installed the latest version it could be that a tool fails.
+Or if a tool does not fail it might be that you submit a tarball with a wrong version and your submission would be rejected for violating rule 17.
 .PP
 The IOCCC uses the term
 .B entry
@@ -267,13 +480,13 @@ The
 .BR fnamchk (1)
 tool was by necessity changed accordingly.
 .PP
-Astute proof readers might find circumstances where variables, comments, error messages and prompt strings use
+Astute proofreaders might find circumstances where variables, comments, error messages and prompt strings use
 .B entry
 instead of
 .BR submission .
 You are welcome to submit pull requests to
 .I https://github.com/ioccc-src/mkiocccentry/pulls
-correct such oversights in variables,
+to correct such oversights in variables,
 comments, error messages and prompt strings.
 Note, however, that there are many cases where the words
 .B entry
@@ -286,11 +499,11 @@ or
 .BR entries .
 .PP
 If you have an issue with the tool you can open an issue at
-.br
-.IR https://github.com/ioccc\-src/mkiocccentry/issues\> .
+.IR https://github.com/ioccc\-src/mkiocccentry/issues
+as a bug report or feature request.
 .SH EXAMPLES
 .PP
-Run test script:
+Run test script from the repo directory:
 .sp
 .RS
 .ft B
@@ -299,28 +512,28 @@ Run test script:
 .RE
 .PP
 Make
-.I work_dir
-and then make an entry from the files
+.I workdir
+and then make a submission tarball from the files
 .IR prog.c ,
 .I Makefile
 and
-.IR remarks.md ,
-saving your answers to the file
+.IR remarks.md 
+in topdir, saving your answers to the file
 .I answers
 for future updates:
 .sp
 .RS
 .ft B
- mkdir work_dir
- ./mkiocccentry \-a answers work_dir prog.c Makefile remarks.md
+ mkdir workdir
+ mkiocccentry \-a answers workdir topdir
 .ft R
 .RE
 .PP
-Use the answers file from the previous invocation to quickly update the entry with an additional file added:
+Use the answers file from the previous invocation to quickly update the entry, allowing you to have a change in files (contents or number of files):
 .sp
 .RS
 .ft B
- ./mkiocccentry \-i answers work_dir prog.c Makefile remarks.md data.txt
+ mkiocccentry \-i answers workdir topdir
 .ft R
 .RE
 .PP
@@ -331,6 +544,47 @@ and
 .sp
 .RS
 .ft B
- ./mkiocccentry \-t /path/to/tar \-T /path/to/txzchk
+ mkiocccentry \-t /path/to/tar \-T /path/to/txzchk workdir topdir
 .ft R
 .RE
+.PP
+Assuming your topdir has the directories
+.BR little ,
+.BR little/bunny ,
+.BR little/bunny/foo ,
+.BR little/bunny/foo/foo ,
+.BR little/ham
+and the files
+.BR little/bunny/foo/foo/mouse ,
+.B little/ham/spam
+and your required files
+.BR prog.c ,
+.B Makefile
+and
+.BR remarks.md ,
+ignore directory
+.BR little/bunny/foo/foo :
+.sp
+.RS
+.ft B
+ mkiocccentry -I little/bunny/foo/foo workdir topdir
+.ft R
+.RE
+.PP
+Alternatively you could do:
+.sp
+.RS
+.ft B
+ mkiocccentry -I little/bunny/foo workdir topdir
+.ft R
+.RE
+because ignoring the path
+.B little/bunny/foo
+makes
+.BR mkiocccentry (1)
+not traverse it.
+.SH SEE ALSO
+.BR iocccsize (1),
+.BR chkentry (1),
+.BR txzchk (1),
+.BR fnamchk (1)

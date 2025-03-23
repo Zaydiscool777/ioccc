@@ -1,12 +1,12 @@
 {
 	"no_comment" : "mandatory comment: because comments were removed from the original JSON spec",
 	"IOCCC_auth_version" : "1.22 2024-05-18",
-	"IOCCC_contest" : "IOCCCMOCK",
-	"mkiocccentry_version" : "1.1.2 2024-12-31",
-	"chkentry_version" : "1.0.3 2024-12-30",
-	"fnamchk_version" : "1.0.2 2024-05-15",
-	"IOCCC_contest_id" : "12345678-1234-4321-abcd-1234567890ab",
-	"tarball" : "submit.12345678-1234-4321-abcd-1234567890ab-0.1716103155.txz",
+	"IOCCC_contest" : "IOCCC28",
+	"mkiocccentry_version" : "2.0.3 2025-03-14",
+	"chkentry_version" : "2.0.3 2025-03-14",
+	"fnamchk_version" : "2.0.1 2025-03-14",
+	"IOCCC_contest_id" : "00000000-0000-4000-8000-000000000000",
+	"tarball" : "submit.00000000-0000-4000-8000-000000000000-0.1742752304.txz",
 	"submit_slot" : 0,
 	"author_count" : 1,
 	"test_mode" : false,
@@ -26,8 +26,8 @@
 			"author_number" : 0
 		}
 	],
-	"formed_timestamp" : 1716103155,
-	"formed_timestamp_usec" : 506171,
+	"formed_timestamp" : 1742752304,
+	"formed_timestamp_usec" : 123456,
 	"timestamp_epoch" : "Thu Jan 01 00:00:00 1970 UTC",
 	"min_timestamp" : 1716103155
 }

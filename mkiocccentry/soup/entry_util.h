@@ -7,9 +7,38 @@
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
  *
- * This tool and the JSON parser were co-developed in 2022 by:
+ * As per IOCCC anonymous judging policy, the calls to json_dbg() in this file
+ * that are JSON_DBG_MED or lower will NOT reveal any JSON content.
+ * Only at JSON_DBG_HIGH or higher should json_dbg() calls in the file
+ * print JSON content.
  *
- *	@xexyl
+ * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
+ * "Because grammar and syntax alone do not make a complete language." :-)
+ *
+ * Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+ * All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This tool and the JSON parser were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -35,19 +64,104 @@
 /*
  * defines
  */
-#define INFO_JSON_FILENAME ".info.json"
-#define AUTH_JSON_FILENAME ".auth.json"
-#define PROG_C_FILENAME "prog.c"
-#define REMARKS_FILENAME "remarks.md"
-#define MAKEFILE_FILENAME "Makefile"
-#define INDEX_HTML_FILENAME "index.html"
-#define INVENTORY_HTML_FILENAME "inventory.html"
-#define PROG_FILENAME "prog"
-#define PROG_ALT_FILENAME "prog.alt"
-#define PROG_ORIG_FILENAME "prog.orig"
-#define PROG_ORIG_C_FILENAME "prog.orig.c"
-#define README_MD_FILENAME "README.md"
+/*
+ * mandatory filenames in the top directory
+ */
+#define AUTH_JSON_FILENAME ".auth.json"         /* filename of the .auth.json file */
+#define INFO_JSON_FILENAME ".info.json"         /* filename of the .info.json file */
+#define PROG_C_FILENAME "prog.c"                /* submission/winning entry source code filename */
+#define MAKEFILE_FILENAME "Makefile"            /* submission/winning entry Makefile filename */
+#define REMARKS_FILENAME "remarks.md"           /* remarks filename that form README.md for winning entries */
+/*
+ * forbidden filenames in the top directory
+ */
+#define GNUMAKEFILE_FILENAME "GNUmakefile"      /* GNUmakefile takes priority over Makefile which we don't want */
+#define INDEX_HTML_FILENAME "index.html"        /* winning entry index.html filename */
+#define PROG_FILENAME "prog"                    /* compiled submission/winning entry code filename */
+#define PROG_ALT_FILENAME "prog.alt"            /* compiled submission/winning entry alt code filename */
+#define PROG_ORIG_FILENAME "prog.orig"          /* compiled winning entry code filename */
+#define PROG_ORIG_C_FILENAME "prog.orig.c"      /* entry source code filename */
+#define README_MD_FILENAME "README.md"          /* README.md file that forms index.html for winning entries */
 
+/*
+ * submissions are not allowed to have any dot file other than the required
+ * .auth.json and .info.json. However we do need this for chkentry(1) as it does
+ * care about .entry.json too. Given that mkiocccentry(1) and txzchk(1) will
+ * both reject a submission with the file .entry.json and given that chkentry(1)
+ * will need to work with .entry.json we do not have it in the forbidden list.
+ * Nonetheless we do need the macro.
+ */
+#define ENTRY_JSON_FILENAME ".entry.json"
+
+/*
+ * optional (and for some executable) filenames in the top level directory
+ */
+#define PROG_ALT_C "prog.alt.c"                 /* alt code source file */
+#define TRY_ALT_SH "try.alt.sh"                 /* try.alt.sh for prog.alt.c */
+#define TRY_SH "try.sh"                         /* try.sh for prog.c */
+
+/*
+ * directory names that should be ignored
+ */
+#define BAZAAR_DIRNAME ".bzr"                   /* for Bazaar */
+#define CIRCLECI_DIRNAME ".circleci"            /* CircleCI */
+#define FOSSIL_DIRNAME0 ".fslckout"             /* For Fossil */
+#define GIT_DIRNAME ".git"                      /* for git */
+#define GITHUB_DIRNAME ".github"                /* For GitHub */
+#define GITLAB_DIRNAME ".gitlab"                /* For GitLab */
+#define MERCURIAL_DIRNAME ".hg"                 /* for Mercurial */
+#define JETBRAIN_DIRNAME ".idea"                /* JetBrains IDE */
+#define SVN_DIRNAME ".svn"                      /* for svn */
+#define BITKEEPER_DIRNAME "BitKeeper"           /* For BitKeeper */
+#define CVS_DIRNAME "CVS"                       /* for CVS */
+#define RCCS_DIRNAME "RCCS"                     /* for RCCS */
+#define FOSSIL_DIRNAME1 "_FOSSIL_"              /* For Fossil */
+#define MONOTONE_DIRNAME "_MTN"                 /* For Monotone */
+#define DARCS_DIRNAME "_darcs"                  /* For Darcs */
+
+/*
+ * filenames that should be ignored, mostly for chkentry -w but it can be used
+ * in mkiocccentry too (although it is implicit since these are dot files)
+ */
+#define GITIGNORE_FILENAME      ".gitignore"            /* ignore list for git */
+#define DS_STORE_FILENAME0      ".DS_Store"             /* Apple's annoying .DS_Store file */
+#define DS_STORE_FILENAME1      "._.DS_Store"           /* Apple's annoying ._.DS_Store file */
+#define DOT_PATH_FILENAME       ".path"                 /* IOCCC .path dot file */
+
+extern char *mandatory_filenames[];             /* filenames that MUST exist in the top level directory */
+extern char *forbidden_filenames[];             /* filenames that must NOT exist in the top level directory */
+extern char *optional_filenames[];              /* filenames that are OPTIONAL in top level directory */
+extern char *ignored_dirnames[];                /* directory names that should be ignored */
+extern char *ignored_filenames[];               /* ignored filenames like .gitignore, .DS_Store etc. */
+extern char *executable_filenames[];            /* filenames that should have mode 0555 */
+extern struct dyn_array *ignored_paths;         /* ignored paths from chkentry -i path */
+extern bool ignore_permissions;                 /* true ==> ignore permissions of files and directories */
+
+/*
+ * enums
+ */
+
+/*
+ * manifest_path - used by test_manifest_path
+ *
+ * Technically the MAN_PATH_EPERM is not exactly the best analogue for EPERM but
+ * since both are about permissions (EPERM being permission denied,
+ * MAN_PATH_EPERM being the path is the wrong permission) this works okay.
+ *
+ * BTW: we explicitly set MAN_PATH_OK to 0 to be like other functions where the
+ * return value of 0 indicates success. And although we could have the others >
+ * 0 like we chose < 0 as a lot of functions also do that, though the errno is >
+ * 0.
+ */
+enum manifest_path
+{
+    MAN_PATH_ERR = -5,      /* some unexpected condition occurred (should never happen) */
+    MAN_PATH_NULL = -4,     /* path is NULL */
+    MAN_PATH_EMPTY = -3,    /* path is empty string */
+    MAN_PATH_ENOENT = -2,    /* path does not exist */
+    MAN_PATH_EPERM = -1,     /* path wrong permissions */
+    MAN_PATH_OK = 0,        /* path exists and right mode */
+};
 /*
  * IOCCC author information
  *
@@ -171,15 +285,24 @@ struct info
     bool test_mode;		/* true ==> test mode entered */
 
     /*
-     * file name array
+     * dynamic arrays for files and directories
+     */
+    struct dyn_array *required_files;   /* required three files */
+    struct dyn_array *extra_files;      /* extra files to be added to tarball */
+    struct dyn_array *directories;      /* directories seen */
+    struct dyn_array *ignored_dirs;     /* ignored directories */
+    struct dyn_array *forbidden_files;  /* forbidden files */
+    struct dyn_array *unsafe_files;     /* unsafe files */
+    struct dyn_array *unsafe_dirs;      /* unsafe directories */
+    struct dyn_array *ignored_symlinks; /* ignored symlinks files */
+    struct dyn_array *ignore_paths;     /* list of paths user requested we ignore (-I foo -I bar) */
+
+    /*
+     * JSON stuff
      */
     char const *info_file;	/* .info.json filename */
     char const *auth_file;	/* .auth.json filename */
-    char *prog_c;		/* prog.c filename */
-    char *Makefile;		/* Makefile filename */
-    char *remarks_md;		/* remarks.md filename */
-    int extra_count;		/* number of extra files */
-    char **extra_file;		/* list of extra filenames followed by NULL */
+    size_t extra_count;		/* number of extra files */
 
     /*
      * .info.json information after the file name array
@@ -223,6 +346,8 @@ extern bool object2manifest(struct json *node, unsigned int depth, struct json_s
 extern char *form_tar_filename(char const *IOCCC_contest_id, int submit_slot, bool test_mode,
 			       time_t formed_timestamp);
 
+extern bool test_version(char const *str, char const *min);
+extern bool test_poison(char const *str,  char const **poisons);
 extern bool test_IOCCC_auth_version(char const *str);
 extern bool test_IOCCC_contest_id(char const *str);
 extern bool test_IOCCC_info_version(char const *str);
@@ -241,7 +366,7 @@ extern bool test_default_handle(bool boolean);
 extern bool test_email(char const *str);
 extern bool test_empty_override(bool boolean);
 extern bool test_submit_slot(int submit_slot);
-extern bool test_extra_file(char const *str);
+extern bool test_extra_filename(char const *str);
 extern bool test_filename_len(char const *str);
 extern bool test_first_rule_is_all(bool boolean);
 extern bool test_fnamchk_version(char const *str);
@@ -258,7 +383,9 @@ extern bool test_IOCCC_contest(char const *str);
 extern bool test_IOCCC_year(int IOCCC_year);
 extern bool test_iocccsize_version(char const *str);
 extern bool test_location_code(char const *str);
-extern bool test_manifest(struct manifest *manp);
+extern bool test_manifest(struct manifest *manp, char *submission_dir);
+enum manifest_path check_manifest_path(char *path, char const *name, mode_t mode);
+void test_manifest_path(char *path, char const *name, enum manifest_path error, mode_t mode);
 extern bool test_min_timestamp(time_t tstamp);
 extern bool test_mkiocccentry_version(char const *str);
 extern bool test_name(char const *str);
@@ -283,6 +410,12 @@ extern bool test_ungetc_warning(bool boolean);
 extern bool test_url(char const *str);
 extern bool test_alt_url(char const *str);
 extern bool test_wordbuf_warning(bool boolean);
+extern bool is_mandatory_filename(char const *str);
+extern bool is_forbidden_filename(char const *str);
+extern bool is_optional_filename(char const *str);
+extern bool is_ignored_dirname(char const *str);
+extern bool is_executable_filename(char const *str);
+extern bool has_ignored_dirname(char const *path);
 
 
 #endif /* INCLUDE_ENTRY_UTIL_H */

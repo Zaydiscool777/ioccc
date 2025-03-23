@@ -2,21 +2,44 @@
 #
 # is_available.sh - check if a tool is an executable file, and in some cases, is sane
 #
-# This script was written in 2024 by:
+# Copyright (c) 2024-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+# rights reserved.
 #
-#	@xexyl
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
+#
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+#
+# This JSON parser, library and tools were co-developed in 2024-2025 by Cody Boone
+# Ferguson and Landon Curt Noll:
+#
+#  @xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 # and:
-#       chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
 #
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
-# "Because even the hard working helpers sometime need a helping hand." :-)
+# "Because even the hard working helpers sometimes need a helping hand." :-)
 #
-# Share and enjoy! :-)
+# "Share and Enjoy!"
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+#
 
-export VERSION="1.2.0 2024-10-09"
+export VERSION="2.0.0 2025-02-28"
 NAME=$(basename "$0")
 export NAME
 export PRINT_WHERE=""

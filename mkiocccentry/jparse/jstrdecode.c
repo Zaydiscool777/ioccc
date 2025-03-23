@@ -3,9 +3,30 @@
  *
  * "JSON: when a minimal design falls below a critical minimum." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -51,7 +72,7 @@ static const char * const usage_msg =
     "\t-h\t\tprint help message and exit\n"
     "\t-v level\tset verbosity level (def level: %d)\n"
     "\t-j\t\tenable parsing of encoded JSON before decoding (def: don't parse)\n"
-    "\t\t\t\tNOTE: use of -j and -d is an error\n"
+    "\t\t\t\tNOTE: -j and -d cannot be used together\n"
     "\t-J level\tset JSON verbosity level (def level: %d)\n"
     "\t-q\t\tquiet mode: silence msg(), warn(), warnp() if -v 0 (def: loud :-) )\n"
     "\t-V\t\tprint version string and exit\n"
@@ -61,7 +82,7 @@ static const char * const usage_msg =
     "\t-Q\t\tenclose output in double quotes (def: do not)\n"
     "\t-e\t\tfor multiple args, enclose each decoded arg in escaped double quotes (def: do not)\n"
     "\t-d\t\tdo not require a leading and trailing double quote (def: do require)\n"
-    "\t\t\t\tNOTE: use of -d and -j is an error\n"
+    "\t\t\t\tNOTE: -d and -j cannot be used together\n"
     "\t-E level\tentertainment mode\n"
     "\n"
     "\t[arg ...]\tJSON decode args on command line (def: read stdin)\n"
@@ -70,11 +91,12 @@ static const char * const usage_msg =
     "Exit codes:\n"
     "     0   decode successful\n"
     "     1   decode unsuccessful\n"
-    "     2   -h and help string printed or -V and version string printed\n"
+    "     2   -h and help string printed or -V and version strings printed\n"
     "     3   invalid command line, invalid option or option missing an argument\n"
     " >= 10   internal error\n"
     "\n"
     "%s version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -363,12 +385,9 @@ main(int argc, char **argv)
     char *dup_input = NULL;	/* duplicate of arg string */
 
     /*
-     * set locale
+     * use default locale based on LANG
      */
-    if (setlocale(LC_ALL, "") == NULL) {
-	err(13, __func__, "failed to set locale");
-	not_reached();
-    }
+    (void) setlocale(LC_ALL, "");
 
     /*
      * parse args
@@ -408,6 +427,7 @@ main(int argc, char **argv)
 	    break;
 	case 'V':		/* -V - print version and exit 2 */
 	    print("%s version: %s\n", JSTRDECODE_BASENAME, JSTRDECODE_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -528,7 +548,7 @@ main(int argc, char **argv)
 		     */
 		    dup_input = dup_without_nl(input, &inputlen);
 		    if (dup_input == NULL) {
-			err(14, __func__, "dup_without_nl failed");
+			err(13, __func__, "dup_without_nl failed");
 			not_reached();
 		    }
 
@@ -546,7 +566,7 @@ main(int argc, char **argv)
                 if (json_parse) {
                     tree = parse_json_str(input, inputlen, &is_valid);
                     if (!is_valid || tree == NULL) {
-                        err(15, __func__, "invalid JSON");
+                        err(14, __func__, "invalid JSON");
                         not_reached();
                     } else {
                         json_tree_free(tree, JSON_INFINITE_DEPTH);
@@ -727,7 +747,7 @@ usage(int exitcode, char const *prog, char const *str)
 
 
     fprintf_usage(exitcode, stderr, usage_msg, prog, DBG_DEFAULT, JSON_DBG_DEFAULT, JSTRDECODE_BASENAME, JSTRDECODE_VERSION,
-	    JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+	    JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

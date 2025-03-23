@@ -11,10 +11,32 @@
  * print JSON content.
  *
  * "Because specs w/o version numbers are forced to commit to their original design flaws." :-)
+ * "Because grammar and syntax alone do not make a complete language." :-)
  *
- * This tool and the JSON parser were co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Landon Curt Noll and Cody Boone Ferguson.
+ * All Rights Reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * This tool and the JSON parser were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -36,6 +58,11 @@
 #include <stdlib.h>
 #include <strings.h> /* strcasecmp */
 #include <ctype.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <fts.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 /*
  * dbg - info, debug, warning, error, and usage message facility
@@ -46,6 +73,11 @@
  * jparse - the parser
  */
 #include "../jparse/jparse.h"
+
+/*
+ * verge - the functionality to test versions
+ */
+#include "../jparse/verge.h"
 
 /*
  * version - official IOCCC toolkit versions
@@ -67,6 +99,128 @@
  */
 #include "location.h"
 
+/*
+ * globals
+ */
+struct dyn_array *ignored_paths = NULL;     /* ignored paths when searching manifest */
+bool ignore_permissions = false;            /* true ==> ignore permissions checks on paths */
+
+/*
+ * mandatory files that must exist in the submission top level directory
+ */
+char *mandatory_filenames[] =
+{
+    AUTH_JSON_FILENAME,
+    INFO_JSON_FILENAME,
+    PROG_C_FILENAME,
+    MAKEFILE_FILENAME,
+    REMARKS_FILENAME,
+    NULL /* MUST BE LAST!! */
+};
+/*
+ * forbidden files that must NOT exist in the submission top level directory
+ */
+char *forbidden_filenames[] =
+{
+    GNUMAKEFILE_FILENAME,
+    INDEX_HTML_FILENAME,
+    PROG_FILENAME,
+    PROG_ALT_FILENAME,
+    PROG_ORIG_FILENAME,
+    PROG_ORIG_C_FILENAME,
+    README_MD_FILENAME,
+    NULL /* MUST BE LAST!! */
+};
+
+/*
+ * optional files that MAY exist in top level directory and which are not
+ * counted against extra files
+ */
+char *optional_filenames[] =
+{
+    PROG_ALT_C,
+    TRY_ALT_SH,
+    TRY_SH,
+    NULL
+};
+
+/*
+ * directories that should be skipped
+ */
+char *ignored_dirnames[] =
+{
+    BAZAAR_DIRNAME,
+    CIRCLECI_DIRNAME,
+    FOSSIL_DIRNAME0,
+    GIT_DIRNAME,
+    GITHUB_DIRNAME,
+    GITLAB_DIRNAME,
+    MERCURIAL_DIRNAME,
+    JETBRAIN_DIRNAME,
+    SVN_DIRNAME,
+    BITKEEPER_DIRNAME,
+    CVS_DIRNAME,
+    RCCS_DIRNAME,
+    FOSSIL_DIRNAME1,
+    MONOTONE_DIRNAME,
+    DARCS_DIRNAME,
+    NULL /* MUST BE LAST!! */
+};
+
+/*
+ * filenames that should be ignored
+ *
+ * NOTE: as these are dot files they are implicitly ignored by mkiocccentry(1)
+ * due to sane_relative_path() thus we don't need to use it for mkiocccentry(1);
+ * it is for chkentry(1) in particular for -w mode.
+ */
+char *ignored_filenames[] =
+{
+    GITIGNORE_FILENAME,
+    DS_STORE_FILENAME0,
+    DS_STORE_FILENAME1,
+    DOT_PATH_FILENAME,
+    NULL /* MUST BE LAST!! */
+};
+
+/*
+ * filenames (in top level submission directory only) that should be mode 0555
+ */
+char *executable_filenames[] =
+{
+    TRY_SH,
+    TRY_ALT_SH,
+    NULL /* MUST BE LAST!! */
+};
+
+static char const *poison_mkiocccentry_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_txzchk_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_iocccsize_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_info_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_auth_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_fnamchk_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
+static char const *poison_chkentry_versions[] =
+{
+    NULL /* MUST BE LAST!! */
+};
 
 /*
  * free_auth - free auto and related sub-elements
@@ -148,8 +302,6 @@ free_auth(struct auth *authp)
 void
 free_info(struct info *infop)
 {
-    int i;
-
     /*
      * firewall
      */
@@ -194,33 +346,8 @@ free_info(struct info *infop)
 	infop->tarball = NULL;
     }
 
-    /*
-     * free file name array
-     */
     /* NOTE: info_file is a compiled in constant */
     /* NOTE: auth_file is a compiled in constant */
-    if (infop->prog_c != NULL) {
-	free(infop->prog_c);
-	infop->prog_c = NULL;
-    }
-    if (infop->Makefile != NULL) {
-	free(infop->Makefile);
-	infop->Makefile = NULL;
-    }
-    if (infop->remarks_md != NULL) {
-	free(infop->remarks_md);
-	infop->remarks_md = NULL;
-    }
-    if (infop->extra_file != NULL) {
-	for (i = 0; i < infop->extra_count; ++i) {
-	    if (infop->extra_file[i] != NULL) {
-		free(infop->extra_file[i]);
-		infop->extra_file[i] = NULL;
-	    }
-	}
-	free(infop->extra_file);
-	infop->extra_file = NULL;
-    }
 
     /*
      * free time values
@@ -230,6 +357,58 @@ free_info(struct info *infop)
 	free(infop->utctime);
 	infop->utctime = NULL;
     }
+
+    /*
+     * free arrays
+     */
+
+    /*
+     * required files (prog.c, Makefile, remarks.md)
+     */
+    free_paths_array(&infop->required_files, false);
+    infop->required_files = NULL;
+    /*
+     * extra files (anything not a required file)
+     */
+    free_paths_array(&infop->extra_files, false);
+    infop->extra_files = NULL;
+    /*
+     * directories found in etopdir
+     */
+    free_paths_array(&infop->directories, false);
+    infop->directories = NULL;
+    /*
+     * ignored directories (.git, CVS etc.)
+     */
+    free_paths_array(&infop->ignored_dirs, false);
+    infop->ignored_dirs = NULL;
+    /*
+     * forbidden files (prog, prog.alt, GNUMakefile, README.md etc.)
+     */
+    free_paths_array(&infop->forbidden_files, false);
+    infop->forbidden_files = NULL;
+    /*
+     * unsafe files (those that sane_relative_path() returns
+     * PATH_ERR_NOT_POSIX_SAFE)
+     */
+    free_paths_array(&infop->unsafe_files, false);
+    infop->unsafe_files = NULL;
+    /*
+     * unsafe directories (those that sane_relative_path() returns
+     * PATH_ERR_NOT_POSIX_SAFE)
+     */
+    free_paths_array(&infop->unsafe_dirs, false);
+    infop->unsafe_dirs = NULL;
+    /*
+     * ignored symlinks (any symlinks found in topdir)
+     */
+    free_paths_array(&infop->ignored_symlinks, false);
+    infop->ignored_symlinks = NULL;
+   /*
+     * user requested ignored files
+     */
+    free_paths_array(&infop->ignore_paths, false);
+    infop->ignore_paths = NULL;
 
     /*
      * zeroize the info structure
@@ -393,7 +572,7 @@ valid_contest_id(char *str)
      *
      *     xxxxxxxx-xxxx-4xxx-Nxxx-xxxxxxxxxxxx
      *
-     * where 'x' is a hex character,  is the UUID version, and N is one of 8, 9, a, or b.
+     * where 'x' is a hex character, 4 is the UUID version, and N is one of 8, 9, a, or b.
      * 1.
      */
     if (len != UUID_LEN) {
@@ -1606,7 +1785,7 @@ object2manifest(struct json *node, unsigned int depth, struct json_sem *sem,
 	} else if (strcmp(arr_name, "extra_file") == 0) {
 
 	    /* validate extra_file filename */
-	    test = test_extra_file(value);
+	    test = test_extra_filename(value);
 	    if (test == false) {
 		if (val_err != NULL) {
 		    *val_err = werr_sem_val(137, jo, depth+2, sem, __func__,
@@ -1690,11 +1869,11 @@ object2manifest(struct json *node, unsigned int depth, struct json_sem *sem,
      * verify that we do not have too many extra filenames or a bogus < 0 extra
      * filenames
      */
-    if (man.count_extra_file < 0 || man.count_extra_file > MAX_FILE_COUNT-MANDATORY_FILE_COUNT) {
+    if (man.count_extra_file < 0 || man.count_extra_file > MAX_FILE_COUNT) {
 	if (val_err != NULL) {
 	    *val_err = werr_sem_val(144, node, depth+2, sem, __func__,
 				    "manifest: man.count_extra_file: %jd just be >=0 and < %d",
-				    man.count_extra_file, MAX_FILE_COUNT-MANDATORY_FILE_COUNT);
+				    man.count_extra_file, MAX_FILE_COUNT);
 	}
 	dyn_array_free(man.extra);
         return false;
@@ -1876,6 +2055,96 @@ form_tar_filename(char const *IOCCC_contest_id, int submit_slot, bool test_mode,
     return tarball_filename;
 }
 
+/*
+ * test_version - test if a version is >= a minimum version
+ *
+ * given:
+ *
+ *  str     - version to check
+ *  min     - min version to check against
+ *
+ * Returns true if version >= min, false otherwise.
+ */
+bool
+test_version(char const *str, char const *min)
+{
+    char *dup1 = NULL;
+    char *dup2 = NULL;
+    char *ver1 = NULL;
+    char *ver2 = NULL;
+
+    if (str == NULL || *str == '\0') {
+        err(148, __func__, "str is NULL or empty string");
+        not_reached();
+    }
+    if (min == NULL || *min == '\0') {
+        err(149, __func__, "min is NULL or empty mining");
+        not_reached();
+    }
+
+    errno = 0; /* pre-clear errno for errp() */
+    dup1 = strdup(str);
+    if (dup1 == NULL) {
+        err(150, __func__, "strdup(str) returned NULL");
+        not_reached();
+    }
+    errno = 0; /* pre-clear errno for errp() */
+    dup2 = strdup(min);
+    if (dup2 == NULL) {
+        err(151, __func__, "strdup(min) returned NULL");
+        not_reached();
+    }
+
+    ver1 = strchr(dup1, ' ');
+    if (ver1 != NULL) {
+        *ver1 = '\0';
+    }
+    ver2 = strchr(dup2, ' ');
+    if (ver2 != NULL) {
+        *ver2 = '\0';
+    }
+
+    if (vercmp(dup1, dup2) == 0) {
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ * test_poisons - test if a version is a so-called poison version
+ *
+ * given:
+ *
+ *  str     - version to check
+ *  min     - min version to check against
+ *
+ * Returns true if poisoned version, false otherwise
+ */
+bool
+test_poison(char const *str, char const **poisons)
+{
+    size_t i;
+
+    if (str == NULL || *str == '\0') {
+        err(152, __func__, "str is NULL or empty string");
+        not_reached();
+    }
+    if (poisons == NULL) {
+        err(153, __func__, "poisons list is NULL");
+        not_reached();
+    }
+
+    for (i = 0; poisons[i]; ++i) {
+        if (!strcasecmp(str, poisons[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 
 /*
  * test_IOCCC_auth_version - test if IOCCC_auth_version is valid
@@ -1892,6 +2161,7 @@ form_tar_filename(char const *IOCCC_contest_id, int submit_slot, bool test_mode,
 bool
 test_IOCCC_auth_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -1903,11 +2173,18 @@ test_IOCCC_auth_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, AUTH_VERSION) != 0) {
+    if (test_poison(str, poison_auth_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: IOCCC_auth_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: IOCCC_auth_version: %s is poisonous: %s", str, poison_auth_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_AUTH_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: IOCCC_auth_version != AUTH_VERSION: %s", AUTH_VERSION);
+		 "invalid: IOCCC_auth_version < MIN_AUTH_VERSION: %s", MIN_AUTH_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: IOCCC_auth_version: %s is not AUTH_VERSION: %s", str, AUTH_VERSION);
+		 "invalid: IOCCC_auth_version: %s is not >= MIN_AUTH_VERSION: %s", str, MIN_AUTH_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "IOCCC_auth_version is valid");
@@ -1985,7 +2262,7 @@ test_IOCCC_contest_id(char const *str)
     }
     if (version != UUID_VERSION) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: UUID version hex char != UUID_VERSION: %x", UUID_VERSION);
+		 "invalid: UUID version hex char != UUID_VERSION %x", UUID_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: UUID version hex char: %1x is not UUID_VERSION: %x", version, UUID_VERSION);
 	return false;
@@ -2019,6 +2296,7 @@ test_IOCCC_contest_id(char const *str)
 bool
 test_IOCCC_info_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -2030,11 +2308,18 @@ test_IOCCC_info_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, INFO_VERSION) != 0) {
+    if (test_poison(str, poison_info_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: IOCCC_info_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: IOCCC_info_version: %s is poisonous: %s", str, poison_info_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_INFO_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: IOCCC_info_version != INFO_VERSION: %s", INFO_VERSION);
+		 "invalid: IOCCC_info_version < MIN_INFO_VERSION: %s", MIN_INFO_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: IOCCC_info_version: %s is not INFO_VERSION: %s", str, INFO_VERSION);
+		 "invalid: IOCCC_info_version: %s is not >= MIN_INFO_VERSION: %s", str, MIN_INFO_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "IOCCC_info_version is valid");
@@ -2070,9 +2355,9 @@ test_Makefile(char const *str)
      */
     if (strcmp(str, "Makefile") != 0) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: Makefile != Makefile: %s", "Makefile");
+		 "invalid: Makefile != Makefile: %s", MAKEFILE_FILENAME);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: Makefile: %s is not Makefile: %s", str, "Makefile");
+		 "invalid: Makefile: %s is not Makefile: %s", str, MAKEFILE_FILENAME);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "Makefile filename is valid");
@@ -2567,11 +2852,11 @@ test_c_src(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, "prog.c") != 0) {
+    if (strcmp(str, PROG_C_FILENAME) != 0) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: c_src != prog.c: %s", "prog.c");
+		 "invalid: c_src != prog.c: %s", PROG_C_FILENAME);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: c_src: %s is not prog.c: %s", str, "prog.c");
+		 "invalid: c_src: %s is not prog.c: %s", str, PROG_C_FILENAME);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "c_src filename is valid");
@@ -2594,6 +2879,7 @@ test_c_src(char const *str)
 bool
 test_chkentry_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -2605,11 +2891,18 @@ test_chkentry_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, CHKENTRY_VERSION) != 0) {
+    if (test_poison(str, poison_chkentry_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: chkentry_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: chkentry_version: %s is poisonous: %s", str, poison_chkentry_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_CHKENTRY_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: chkentry_version != CHKENTRY_VERSION: %s", CHKENTRY_VERSION);
+		 "invalid: chkentry_version < MIN_CHKENTRY_VERSION: %s", MIN_CHKENTRY_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: chkentry_version: %s is not CHKENTRY_VERSION: %s", str, CHKENTRY_VERSION);
+		 "invalid: chkentry_version: %s is not >= MIN_CHKENTRY_VERSION: %s", str, MIN_CHKENTRY_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "chkentry_version is valid");
@@ -2785,7 +3078,7 @@ test_submit_slot(int submit_slot)
 
 
 /*
- * test_extra_file - test if extra_file is valid
+ * test_extra_filename - test if extra_file is valid
  *
  * Determine if extra_file is a valid filename and does not
  * match one of the mandatory filenames.
@@ -2802,7 +3095,7 @@ test_submit_slot(int submit_slot)
  *	false ==> string is NOT valid, or NULL pointer, or some internal error
  */
 bool
-test_extra_file(char const *str)
+test_extra_filename(char const *str)
 {
     /*
      * firewall
@@ -2817,43 +3110,45 @@ test_extra_file(char const *str)
      */
 
     /*
-     * test the filename length is > 0 && <= MAX_FILENAME_LEN
+     * validate that the filename is POSIX portable safe plus + chars
+     *
+     * NOTE: here the last arg to sane_relative_path() is false because the
+     * extra files should not be saved as "./".
      */
-    if (!test_filename_len(str)) {
-        json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: filename length check on extra_file failed");
-	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: filename length check on extra_file failed: <%s>", str);
-
-	return false;
-    }
-
-    /* validate that the filename is POSIX portable safe plus + chars */
-    if (posix_plus_safe(str, false, false, true) == false) {
+    if (sane_relative_path(str, MAX_FILENAME_LEN, MAX_PATH_LEN, MAX_PATH_DEPTH, false) != PATH_OK) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: posix_plus_safe check on extra_file failed");
+		 "invalid: sane_relative_path check on extra_file failed");
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: posix_plus_safe check on extra_file failed: <%s>", str);
+		 "invalid: sane_relative_path check on extra_file failed: <%s>", str);
 	return false;
     }
 
     /* verify that extra_file does not match a mandatory filename */
-    if (!strcasecmp(str, AUTH_JSON_FILENAME) || !strcasecmp(str, INFO_JSON_FILENAME) ||
-	!strcasecmp(str, MAKEFILE_FILENAME) || !strcasecmp(str, PROG_C_FILENAME) ||
-	!strcasecmp(str, REMARKS_FILENAME)) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: extra_file matches a mandatory file: <%s>", str);
-	return false;
+    if (is_mandatory_filename(str)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: extra_file matches a mandatory file");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: extra_file matches a mandatory file: <%s>", str);
+        return false;
     }
     /* also verify it does not match a disallowed filename */
-    else if (!strcasecmp(str, INDEX_HTML_FILENAME) || !strcasecmp(str, INVENTORY_HTML_FILENAME) ||
-	     !strcasecmp(str, PROG_FILENAME) || !strcasecmp(str, PROG_ALT_FILENAME) ||
-	     !strcasecmp(str, PROG_ORIG_FILENAME) || !strcasecmp(str, PROG_ORIG_C_FILENAME) ||
-	     !strcasecmp(str, README_MD_FILENAME)) {
-		json_dbg(JSON_DBG_MED, __func__,
-			"invalid: extra_file matches disallowed filename: <%s>", str);
-		return false;
+    if (is_forbidden_filename(str)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                "invalid: extra_file matches disallowed filename");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                "invalid: extra_file matches disallowed filename: <%s>", str);
+        return false;
     }
+
+    /* also verify it does not match a forbidden directory name */
+    if (is_ignored_dirname(str)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                "invalid: extra_file matches an ignored directory name");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                "invalid: extra_file matches an ignored directory name: <%s>", str);
+        return false;
+    }
+
     json_dbg(JSON_DBG_MED, __func__, "extra_file is valid");
     return true;
 }
@@ -2943,6 +3238,7 @@ test_first_rule_is_all(bool boolean)
 bool
 test_fnamchk_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -2954,11 +3250,18 @@ test_fnamchk_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, FNAMCHK_VERSION) != 0) {
+    if (test_poison(str, poison_fnamchk_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: fnamchk_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: fnamchk_version: %s is poisonous: %s", str, poison_fnamchk_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_FNAMCHK_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: fnamchk_version != FNAMCHK_VERSION: %s", FNAMCHK_VERSION);
+		 "invalid: fnamchk_version < MIN_FNAMCHK_VERSION: %s", MIN_FNAMCHK_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: fnamchk_version: %s is not FNAMCHK_VERSION: %s", str, FNAMCHK_VERSION);
+		 "invalid: fnamchk_version: %s is not >= MIN_FNAMCHK_VERSION: %s", str, MIN_FNAMCHK_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "fnamchk_version is valid");
@@ -3069,10 +3372,14 @@ test_formed_timestamp_usec(int formed_timestamp_usec)
      */
     if (formed_timestamp_usec < MIN_FORMED_TIMESTAMP_USEC) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: formed_timestamp_usec: formed_timestamp_usec < %d", MIN_FORMED_TIMESTAMP_USEC);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: formed_timestamp_usec: %d < %d", formed_timestamp_usec, MIN_FORMED_TIMESTAMP_USEC);
 	return false;
     } else if (formed_timestamp_usec > MAX_FORMED_TIMESTAMP_USEC) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: formed_timestamp_usec > MAX_FORMED_TIMESTAMP_USEC %d", MAX_FORMED_TIMESTAMP_USEC);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: formed_timestamp_usec: %d > MAX_FORMED_TIMESTAMP_USEC %d", formed_timestamp_usec,
                  MAX_FORMED_TIMESTAMP_USEC);
 	return false;
@@ -3210,7 +3517,7 @@ test_github(char const *str)
     length = strlen(str);
     if (length > MAX_GITHUB_LEN) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: github length %ju > max %d: <%s>", (uintmax_t)length, MAX_GITHUB_LEN, str);
+		 "invalid: github length > max %d", MAX_GITHUB_LEN);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: github: <%s> is invalid", str);
 	return false;
@@ -3229,7 +3536,12 @@ test_github(char const *str)
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: github: <%s> is invalid", str);
 	return false;
-
+    } else if (str[1] == '\0') {
+	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: github account has no chars after '@'");
+	json_dbg(JSON_DBG_HIGH, __func__,
+		 "invalid: github: <%s> is invalid", str);
+	return false;
     }
 
     json_dbg(JSON_DBG_MED, __func__, "github is valid");
@@ -3355,7 +3667,9 @@ test_IOCCC_year(int IOCCC_year)
      */
     if (IOCCC_year != IOCCC_YEAR) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: IOCCC_year: %d != %d", IOCCC_year, IOCCC_YEAR);
+		 "invalid: IOCCC_year != %d", IOCCC_YEAR);
+	json_dbg(JSON_DBG_HIGH, __func__,
+		 "invalid: IOCCC_year %d != %d", IOCCC_year, IOCCC_YEAR);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "IOCCC_year is valid");
@@ -3378,6 +3692,7 @@ test_IOCCC_year(int IOCCC_year)
 bool
 test_iocccsize_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -3389,11 +3704,18 @@ test_iocccsize_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, IOCCCSIZE_VERSION) != 0) {
+    if (test_poison(str, poison_iocccsize_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: iocccsize_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: iocccsize_version: %s is poisonous: %s", str, poison_iocccsize_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_IOCCCSIZE_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: iocccsize_version != IOCCCSIZE_VERSION: %s", IOCCCSIZE_VERSION);
+		 "invalid: iocccsize_version < MIN_IOCCCSIZE_VERSION: %s", MIN_IOCCCSIZE_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: iocccsize_version: %s is not IOCCCSIZE_VERSION: %s", str, IOCCCSIZE_VERSION);
+		 "invalid: iocccsize_version: %s is not >= MIN_IOCCCSIZE_VERSION: %s", str, MIN_IOCCCSIZE_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "iocccsize_version is valid");
@@ -3435,7 +3757,7 @@ test_location_code(char const *str)
     length = strlen(str);
     if (length != 2) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: location_code: length: %zu != 2", length);
+		 "invalid: location_code: length != 2");
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: location_code: <%s> length: %zu != 2", str, length);
 	return false;
@@ -3445,7 +3767,7 @@ test_location_code(char const *str)
     if (!isascii(str[0]) || !isupper(str[0]) || !isascii(str[1]) || !isupper(str[1])) {
 	json_dbg(JSON_DBG_MED, __func__,
 		 "invalid: location_code: is not 2 ASCII UPPER CASE characters");
-	json_dbg(JSON_DBG_MED, __func__,
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: location_code: <%s> is not 2 ASCII UPPER CASE characters", str);
 	return false;
     }
@@ -3455,12 +3777,186 @@ test_location_code(char const *str)
     if (location_name == NULL) {
 	json_dbg(JSON_DBG_MED, __func__,
 		 "invalid: location_code: not a known ISO 3166-1 location/country code");
-	json_dbg(JSON_DBG_MED, __func__,
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: location_code: <%s> not a known ISO 3166-1 location/country code", str);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "location_code is valid");
     return true;
+}
+
+/*
+ * check_manifest_path
+ *
+ * Check that a path exists in the submission directory that is reported in the
+ * manifest and that it is the correct mode (permission), calling
+ * test_manifest_path() if we do not get MAN_PATH_OK.
+ *
+ * given:
+ *
+ *  path        -   path from find_path() to search for
+ *  name        -   name of file that was tested (passed to test_manifest_path())
+ *  mode        -   mode the path must be
+ *
+ * Return:
+ *
+ * If some other condition occurs we return MAN_PATH_ERR (this should
+ * never happen).
+ * If path is NULL we return MAN_PATH_NULL.
+ * If path is an empty string we return MAN_PATH_EMPTY.
+ * If path does not exist we return MAN_PATH_ENOENT (analogous to ENOENT).
+ * If path is wrong permissions we return MAN_PATH_EPERM (along the lines
+ * of EPERM: technically EPERM means permission denied and MAN_PATH_EPERM
+ * means wrong permissions but it is close enough).
+ * If path exists and is the right mode we return MAN_PATH_OK.
+ *
+ * NOTE: the caller is responsible for freeing the path after this function
+ * returns.
+ *
+ * NOTE: if we get anything but MAN_PATH_OK we will call test_manifest_path()
+ * and return the appropriate error enum (in which case the caller of this
+ * function should return false, after freeing path of course); otherwise we
+ * will return MAN_PATH_OK and the caller should just free(path); path = NULL
+ * and move on to the next test.
+ *
+ * BTW: we explicitly set MAN_PATH_OK to 0 to be like other functions where the
+ * return value of 0 indicates success. And although we could have the others >
+ * 0 like we chose < 0 as a lot of functions also do that, though the errno is >
+ * 0.
+ */
+enum manifest_path
+check_manifest_path(char *path, char const *name, mode_t mode)
+{
+    enum manifest_path ret = MAN_PATH_OK; /* assume all is good */
+
+    /*
+     * firewall
+     */
+    if (name == NULL || *name == '\0') {
+        err(154, __func__, "passed NULL or empty name");
+        not_reached();
+    } else if (path == NULL) {
+        ret = MAN_PATH_NULL;
+    } else if (*path == '\0') {
+        ret = MAN_PATH_EMPTY;
+    } else {
+        /*
+         * we KNOW path is not NULL and not an empty string: do the actual checks
+         * now.
+         */
+        if (!exists(path)) {
+            ret = MAN_PATH_ENOENT;
+        } else if (!ignore_permissions && !is_mode(path, mode)) {
+            ret = MAN_PATH_EPERM;
+        }
+    }
+    if (ret != MAN_PATH_OK) {
+        test_manifest_path(path, name, ret, mode);
+    }
+
+    return ret;
+}
+
+/*
+ * test_manifest_path
+ *
+ * Given a path, name, enum manifest_path error and mode, we will report the
+ * correct error message and return that error code. Otherwise we will just
+ * return and do nothing.
+ *
+ * given:
+ *      path        - path found for debug message
+ *      name        - name of file for debug message (can be NULL)
+ *      error       - enum manifest_path for debug message if != MAN_PATH_OK
+ *      mode        - mode that was expected of the file
+ *
+ * Returns: the error code in error.
+ */
+void
+test_manifest_path(char *path, char const *name, enum manifest_path error, mode_t mode)
+{
+    /*
+     * firewall
+     */
+    if (name != NULL && *name == '\0') {
+        /*
+         * reset to NULL if empty string/
+         */
+        name = NULL;
+    }
+
+    /*
+     * we check for certain conditions so as to not have to repeat checks and
+     * messages
+     */
+    if (path == NULL || error == MAN_PATH_NULL) {
+        json_dbg(JSON_DBG_MED, __func__, "invalid: path supposedly found in find_path() is NULL");
+        if (name != NULL) {
+            json_dbg(JSON_DBG_HIGH, __func__, "invalid: path supposedly found in find_path() is NULL, name: %s", name);
+        }
+        return;
+    } else if (*path == '\0') {
+        json_dbg(JSON_DBG_MED, __func__, "invalid: path supposedly found in find_path() is empty string");
+        if (name != NULL) {
+            json_dbg(JSON_DBG_HIGH, __func__, "invalid: path supposedly found in find_path() is empty string, name: %s", name);
+        }
+        return;
+    }
+
+
+    /*
+     * here we have to check the other conditions
+     */
+    switch (error) {
+        /*
+         * if error == MAN_PATH_OK we return true immediately
+         */
+        case MAN_PATH_OK:
+            break;
+        case MAN_PATH_ERR:
+            if (name != NULL) {
+                json_dbg(JSON_DBG_MED, __func__, "invalid: some unexpected condition was found for: %s", name);
+                json_dbg(JSON_DBG_HIGH, __func__, "invalid: some unexpected condition for path: %s, name: %s", path, name);
+            } else {
+                json_dbg(JSON_DBG_MED, __func__, "invalid: some unexpected condition was found");
+                json_dbg(JSON_DBG_HIGH, __func__, "invalid: some unexpected condition found for: %s", path);
+            }
+            break;
+        case MAN_PATH_NULL:
+        case MAN_PATH_EMPTY:
+            /*
+             * already taken care of above (and we shouldn't even get here)
+             */
+            break;
+        case MAN_PATH_ENOENT:
+            if (name != NULL) {
+                json_dbg(JSON_DBG_MED, __func__, "invalid: path supposedly found by find_path() does not exist");
+                json_dbg(JSON_DBG_HIGH, __func__, "invalid: path supposedly found by find_path(): %s: does not exist", name);
+            } else {
+                json_dbg(JSON_DBG_MED, __func__, "invalid: path supposedly found by find_path() does not exist");
+                json_dbg(JSON_DBG_HIGH, __func__, "invalid: path supposedly found by find_path(): %s: does not exist", path);
+            }
+            break;
+        case MAN_PATH_EPERM:
+            if (name != NULL) {
+                json_dbg(JSON_DBG_MED, __func__, "invalid: path found by find_path() is not the correct mode");
+                json_dbg(JSON_DBG_HIGH, __func__,
+                        "invalid: path found by find_path() for: %s: %s is not the correct mode: %04o != %04o",
+                        name, path, mode, filemode(path, true));
+            } else {
+                json_dbg(JSON_DBG_MED, __func__, "path found by find_path() is not the correct mode");
+                json_dbg(JSON_DBG_HIGH, __func__, "path found by find_path(): %s is not the correct mode: %04o != %04o",
+                        path, mode, filemode(path, true));
+            }
+            break;
+        default:
+            /*
+             * technically this should never happen but we will return true in
+             * any case, though an argument could be made to make it an error
+             * instead
+             */
+            break;
+    }
 }
 
 
@@ -3484,10 +3980,15 @@ test_location_code(char const *str)
  *
  * provided that those extra filenames do NOT match one of the above
  * mentioned mandatory files AND that the extra filename is POSIX portable
- * safe plus + chars.
+ * safe plus + chars AND they are not duplicated either AND any other check in
+ * test_extra_filename().
+ *
+ * If any file in the manifest does not exist in the submission directory, it is
+ * an error.
  *
  * given:
- *	manp		pointer struct manifest
+ *	manp		    pointer struct manifest
+ *	submission_dir      submission directory path
  *
  * returns:
  *	true ==> manifest is complete with unique extra files
@@ -3495,14 +3996,18 @@ test_location_code(char const *str)
  *		  or NULL pointer, or some internal error
  */
 bool
-test_manifest(struct manifest *manp)
+test_manifest(struct manifest *manp, char *submission_dir)
 {
     intmax_t count_extra_file = -1;		/* number of extra files */
-    bool test = false;			/* test_extra_file() test result */
+    bool test = false;			/* test_extra_filename() test result */
     char *extra_filename = NULL;	/* filename of an extra file */
     char *extra_filename2 = NULL;	/* second filename of an extra file */
     intmax_t i;
     intmax_t j;
+    int cwd = -1;                       /* to record cwd before changing to dir */
+    struct fts fts;                     /* for FTS functions */
+    char *path = NULL;                  /* to verify files exist and are right perms etc. */
+    char *pathname = NULL;              /* path name we're currently testing */
 
     /*
      * firewall
@@ -3524,35 +4029,219 @@ test_manifest(struct manifest *manp)
 		       manp->count_extra_file, dyn_array_tell(manp->extra));
 	return false;
     }
+    if (submission_dir == NULL) {
+        warn(__func__, "submission_dir is NULL");
+        return false;
+    }
+
+    /*
+     * first reset fts struct
+     *
+     * IMPORTANT: make sure to memset(&fts, 0, sizeof(struct fts)) before the
+     * first use of reset_fts()! This is needed here AND chkentry because we do
+     * not pass a struct fts * here nor should we.
+     */
+    memset(&fts, 0, sizeof(struct fts));
+    reset_fts(&fts, false); /* false means do not clear out ignored list */
+    /*
+     * Below we will have to check that the files in the manifest actually exist
+     * in the submission directory. To do this we have to use the find_path() or
+     * find_paths() function. For individual files it is better to do
+     * find_path(). Now we do have to find multiple files but one at a time so
+     * it's not necessary to use find_paths() (and read_fts() we definitely
+     * don't want to use).
+     *
+     * The only thing that will have to be reset for each time we call the
+     * find_path() function is the tree itself. We don't technically need to use
+     * reset_fts() more than once but in some cases we might do that anyway.
+     */
+    fts.depth = 1; /* for these we NEED depth 1 ONLY */
+    fts.match_case = false; /* we don't require the same case */
+    fts.base = true; /* we want basename at the specific depth */
+    fts.type = FTS_TYPE_FILE; /* we only want regular files */
+
+    /*
+     * all the other options are okay at their default value for the first tests
+     */
     count_extra_file = manp->count_extra_file;
 
     /*
-     * look for required mandatory files in manifest
+     * look for required mandatory files in manifest if not ignored
      */
-    if (manp->count_info_JSON != 1) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: expected 1 valid info_JSON, found: %jd", manp->count_info_JSON);
-        return false;
+    pathname = INFO_JSON_FILENAME;
+    if (!array_has_path(ignored_paths, pathname, true, NULL)) {
+        if (manp->count_info_JSON != 1) {
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: found info_JSON != expected 1 valid info_JSON");
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: expected 1 valid info_JSON, found: %jd", manp->count_info_JSON);
+            return false;
+        } else {
+            /*
+             * now find the file .info.json and run tests on it
+             */
+            path = find_path(pathname, submission_dir, -1, &cwd, false, &fts);
+            /*
+             * NOTE: we don't need to check that path == NULL or *path == '\0'
+             * because the function check_manifest_path() does this (and more) for
+             * us. This actually includes specific error messages so we actually
+             * want to pass it even if it is NULL.
+             */
+            if (check_manifest_path(path, pathname, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                /* must be 0444 */
+                free(path);
+                path = NULL;
+                return false;
+            }
+            /*
+             * go back to previous working directory
+             *
+             * NOTE: we have to do this AFTER we check for the path being okay
+             * because otherwise the file would not be found as we won't be in
+             * the right directory and we do NOT want absolute paths
+             */
+            (void) read_fts(NULL, -1, &cwd, NULL);
+        }
     }
-    if (manp->count_auth_JSON != 1) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: expected 1 valid auth_JSON, found: %jd", manp->count_auth_JSON);
-        return false;
+
+    pathname = AUTH_JSON_FILENAME;
+    if (!array_has_path(ignored_paths, pathname, true, NULL)) {
+        if (manp->count_auth_JSON != 1) {
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: found auth_JSON != expected 1 valid auth_JSON");
+            json_dbg(JSON_DBG_HIGH, __func__,
+                     "invalid: expected 1 valid auth_JSON, found: %jd", manp->count_auth_JSON);
+            return false;
+        } else {
+            /*
+             * now find the file .auth.json and run tests on it
+             */
+            path = find_path(pathname, submission_dir, -1, &cwd, false, &fts);
+            /*
+             * NOTE: we don't need to check that path == NULL or *path == '\0'
+             * because the function check_manifest_path() does this (and more) for
+             * us. This actually includes specific error messages so we actually
+             * want to pass it even if it is NULL.
+             */
+            if (check_manifest_path(path, pathname, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                /* must be 0444 */
+                free(path);
+                path = NULL;
+                return false;
+            }
+            /*
+             * go back to previous working directory
+             *
+             * NOTE: we have to do this AFTER we check for the path being okay
+             * because otherwise the file would not be found as we won't be in
+             * the right directory and we do NOT want absolute paths
+             */
+            (void) read_fts(NULL, -1, &cwd, NULL);
+        }
     }
-    if (manp->count_c_src != 1) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: expected 1 valid c_src, found: %jd", manp->count_c_src);
-        return false;
+
+    pathname = PROG_C_FILENAME;
+    if (!array_has_path(ignored_paths, pathname, true, NULL)) {
+        if (manp->count_c_src != 1) {
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: found c_src != expected 1 valid c_src");
+            json_dbg(JSON_DBG_HIGH, __func__,
+                     "invalid: expected 1 valid c_src, found: %jd", manp->count_c_src);
+            return false;
+        } else {
+            /*
+             * now find the file prog.c and run tests on it
+             */
+            path = find_path(pathname, submission_dir, -1, &cwd, false, &fts);
+            /*
+             * NOTE: we don't need to check that path == NULL or *path == '\0'
+             * because the function check_manifest_path() does this (and more) for
+             * us. This actually includes specific error messages so we actually
+             * want to pass it even if it is NULL.
+             */
+            if (check_manifest_path(path, pathname, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                /* must be 0444 */
+                free(path);
+                path = NULL;
+                return false;
+            }
+            /*
+             * go back to previous working directory
+             *
+             * NOTE: we have to do this AFTER we check for the path being okay
+             * because otherwise the file would not be found as we won't be in
+             * the right directory and we do NOT want absolute paths
+             */
+            (void) read_fts(NULL, -1, &cwd, NULL);
+        }
     }
-    if (manp->count_Makefile != 1) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: expected 1 valid Makefile, found: %jd", manp->count_Makefile);
-        return false;
+
+    pathname = MAKEFILE_FILENAME;
+    if (!array_has_path(ignored_paths, pathname, true, NULL)) {
+        if (manp->count_Makefile != 1) {
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: found Makefile != expected 1 valid Makefile");
+            json_dbg(JSON_DBG_HIGH, __func__,
+                     "invalid: expected 1 valid Makefile, found: %jd", manp->count_Makefile);
+            return false;
+        } else {
+            /*
+             * now find the file Makefile and run tests on it
+             */
+            path = find_path(pathname, submission_dir, -1, &cwd, false, &fts);
+            /*
+             * NOTE: we don't need to check that path == NULL or *path == '\0'
+             * because the function check_manifest_path() does this (and more) for
+             * us. This actually includes specific error messages so we actually
+             * want to pass it even if it is NULL.
+             */
+            if (check_manifest_path(path, pathname, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                /* must be 0444 */
+                free(path);
+                path = NULL;
+                return false;
+            }
+            /*
+             * go back to previous working directory
+             *
+             * NOTE: we have to do this AFTER we check for the path being okay
+             * because otherwise the file would not be found as we won't be in
+             * the right directory and we do NOT want absolute paths
+             */
+            (void) read_fts(NULL, -1, &cwd, NULL);
+        }
     }
-    if (manp->count_remarks != 1) {
-	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: expected 1 valid remarks, found: %jd", manp->count_remarks);
-        return false;
+
+    pathname = REMARKS_FILENAME;
+    if (!array_has_path(ignored_paths, pathname, true, NULL)) {
+        if (manp->count_remarks != 1) {
+            json_dbg(JSON_DBG_MED, __func__,
+                     "invalid: remarks found != expected 1 valid remarks");
+            json_dbg(JSON_DBG_HIGH, __func__,
+                     "invalid: expected 1 valid remarks, found: %jd", manp->count_remarks);
+            return false;
+        } else {
+            /*
+             * now find the file Makefile and run tests on it
+             */
+            path = find_path(pathname, submission_dir, -1, &cwd, false, &fts);
+            /*
+             * NOTE: we don't need to check that path == NULL or *path == '\0'
+             * because the function check_manifest_path() does this (and more) for
+             * us. This actually includes specific error messages so we actually
+             * want to pass it even if it is NULL.
+             */
+            if (check_manifest_path(path, pathname, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                /* must be 0444 */
+                free(path);
+                path = NULL;
+                return false;
+            }
+            /*
+             * do NOT return to previous directory because we don't need the
+             * more fine-tuned functions below
+             */
+        }
     }
 
     /*
@@ -3564,7 +4253,8 @@ test_manifest(struct manifest *manp)
     }
 
     /*
-     * verify that extra files are valid filenames and do not match a mandatory file
+     * verify that extra files are valid filenames and do not match a mandatory
+     * file and verify they have the right permissions.
      */
     for (i=0; i < count_extra_file; ++i) {
 
@@ -3573,18 +4263,38 @@ test_manifest(struct manifest *manp)
 	if (extra_filename == NULL) {
 	    json_dbg(JSON_DBG_MED, __func__,
 		     "invalid: manifest extra[%jd] is NULL", i);
-	    return false;
 	}
 
+        /*
+         * don't do any checks if this file is being ignored
+         */
+        if (array_has_path(ignored_paths, extra_filename, false, NULL)) {
+            continue;
+        }
+
 	/* validate filename for this extra file */
-	test = test_extra_file(extra_filename);
+	test = test_extra_filename(extra_filename);
 	if (test == false) {
 	    json_dbg(JSON_DBG_MED, __func__,
 		     "invalid: manifest extra[%jd] filename is invalid", i);
 	    json_dbg(JSON_DBG_HIGH, __func__,
 		     "invalid: manifest extra[%jd] filename: <%s> is invalid", i, extra_filename);
+
 	    return false;
 	}
+        if (is_executable_filename(extra_filename)) {
+            /*
+             * must be 0555
+             */
+            if (check_manifest_path(extra_filename, extra_filename,
+                        S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != MAN_PATH_OK) {
+                return false;
+            }
+        } else {
+            if (check_manifest_path(extra_filename, extra_filename, S_IRUSR | S_IRGRP | S_IROTH) != MAN_PATH_OK) {
+                return false;
+            }
+        }
     }
 
     /*
@@ -3592,6 +4302,7 @@ test_manifest(struct manifest *manp)
      */
     if (count_extra_file == 1) {
 	json_dbg(JSON_DBG_MED, __func__, "manifest is complete with only 1 valid extra filename");
+
 	return true;
     }
 
@@ -3609,6 +4320,12 @@ test_manifest(struct manifest *manp)
 		     "invalid: manifest extra[i = %jd] is NULL", i);
 	    return false;
 	}
+        /*
+         * don't do any checks if the file is being ignored
+         */
+        if (array_has_path(ignored_paths, extra_filename, false, NULL)) {
+            continue;
+        }
 
 	/*
 	 * compare first extra filename with the remaining extra filenames
@@ -3622,7 +4339,6 @@ test_manifest(struct manifest *manp)
 			 "invalid: manifest extra[j = %jd] is NULL", j);
 		return false;
 	    }
-
 	    /*
 	     * compare first and second extra filenames
 	     */
@@ -3638,6 +4354,12 @@ test_manifest(struct manifest *manp)
 	}
     }
     json_dbg(JSON_DBG_MED, __func__, "manifest is complete with valid unique extra filenames");
+
+    /*
+     * switch back to previous directory
+     */
+    (void) read_fts(NULL, -1, &cwd, NULL);
+
     return true;
 }
 
@@ -3662,8 +4384,6 @@ test_min_timestamp(time_t tstamp)
      */
     if (tstamp != MIN_TIMESTAMP) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: min_timestamp != MIN_TIMESTAMP");
-	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: min_timestamp != MIN_TIMESTAMP");
 	if ((time_t)-1 > 0) {
 	    /* case: unsigned time_t */
@@ -3699,6 +4419,7 @@ test_min_timestamp(time_t tstamp)
 bool
 test_mkiocccentry_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -3710,11 +4431,18 @@ test_mkiocccentry_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, MKIOCCCENTRY_VERSION) != 0) {
+    if (test_poison(str, poison_mkiocccentry_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: mkiocccentry_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: mkiocccentry_version: %s is poisonous: %s", str, poison_mkiocccentry_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_MKIOCCCENTRY_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: mkiocccentry_version != MKIOCCCENTRY_VERSION: %s", MKIOCCCENTRY_VERSION);
+		 "invalid: mkiocccentry_version < MIN_MKIOCCCENTRY_VERSION: %s", MIN_MKIOCCCENTRY_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: mkiocccentry_version: %s is not MKIOCCCENTRY_VERSION: %s", str, MKIOCCCENTRY_VERSION);
+		 "invalid: mkiocccentry_version: %s is not >= MIN_MKIOCCCENTRY_VERSION: %s", str, MIN_MKIOCCCENTRY_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "mkiocccentry_version is valid");
@@ -3758,8 +4486,8 @@ test_name(char const *str)
 	return false;
     } else if (length > MAX_NAME_LEN) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: name length %ju > max length: %ju",
-		 (uintmax_t)length, (uintmax_t)MAX_NAME_LEN);
+		 "invalid: name length > max length: %ju",
+		 (uintmax_t)MAX_NAME_LEN);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: name <%s> length %ju > max length: %ju",
 		 str, (uintmax_t)length, (uintmax_t)MAX_NAME_LEN);
@@ -3973,10 +4701,14 @@ test_rule_2a_size(off_t rule_2a_size)
     /* test lower bound */
     if (rule_2a_size <= 0) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "warning: rule_2a_size <= 0");
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "warning: rule_2a_size: %jd <= 0", (intmax_t)rule_2a_size);
     /* test upper bound */
     } else if (rule_2a_size > RULE_2A_SIZE) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "warning: rule_2a_size > %jd", (intmax_t)RULE_2A_SIZE);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "warning: rule_2a_size: %jd > %jd", (intmax_t)rule_2a_size, (intmax_t)RULE_2A_SIZE);
     } else {
 	/* rule_2a_size is valid */
@@ -4037,10 +4769,14 @@ test_rule_2b_size(size_t rule_2b_size)
     /* test lower bound */
     if (rule_2b_size <= 0) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "warning: rule_2b_size <= 0");
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "warning: rule_2b_size: %ju <= 0", (uintmax_t)rule_2b_size);
     /* test upper bound */
     } else if (rule_2b_size > RULE_2B_SIZE) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "warning: rule_2b_size > %ju", (uintmax_t)RULE_2B_SIZE);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "warning: rule_2b_size: %ju > %ju", (uintmax_t)rule_2b_size, (uintmax_t)RULE_2B_SIZE);
     } else {
 	/* rule_2b_size is valid */
@@ -4152,7 +4888,7 @@ test_tarball(char const *str, char const *IOCCC_contest_id, int submit_slot, boo
     if (strcmp(str, tar_filename) != 0) {
 	json_dbg(JSON_DBG_MED, __func__,
 		 "invalid: invalid tar_filename");
-	json_dbg(JSON_DBG_MED, __func__,
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: tarball: <%s> != expected tarball filename: <%s>",
 		 str, tar_filename);
 	if (tar_filename != NULL) {
@@ -4278,6 +5014,8 @@ test_title(char const *str)
     length = strlen(str);
     if (length > MAX_TITLE_LEN) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: title length > max %d", MAX_TITLE_LEN);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: title length %ju > max %d: <%s>", (uintmax_t)length, MAX_TITLE_LEN, str);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: title: <%s> is invalid", str);
@@ -4286,6 +5024,8 @@ test_title(char const *str)
     /* check for valid title chars */
     if (!posix_plus_safe(str, true, false, true)) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: title does not match regexp ^[0-9a-z][0-9a-z._+-]*$");
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: title does not match regexp ^[0-9a-z][0-9a-z._+-]*$: '%s'", str);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: title: <%s> is invalid", str);
@@ -4434,6 +5174,7 @@ test_mastodon(char const *str)
 bool
 test_txzchk_version(char const *str)
 {
+    size_t i = 0;
     /*
      * firewall
      */
@@ -4445,11 +5186,18 @@ test_txzchk_version(char const *str)
     /*
      * validate str
      */
-    if (strcmp(str, TXZCHK_VERSION) != 0) {
+    if (test_poison(str, poison_txzchk_versions)) {
+        json_dbg(JSON_DBG_MED, __func__,
+                 "invalid: txzchk_version: is poisonous");
+        json_dbg(JSON_DBG_HIGH, __func__,
+                 "invalid: txzchk_version: %s is poisonous: %s", str, poison_txzchk_versions[i]);
+        return false;
+    }
+    if (!test_version(str, MIN_TXZCHK_VERSION)) {
 	json_dbg(JSON_DBG_MED, __func__,
-		 "invalid: txzchk_version != TXZCHK_VERSION: %s", TXZCHK_VERSION);
+		 "invalid: txzchk_version < MIN_TXZCHK_VERSION: %s", MIN_TXZCHK_VERSION);
 	json_dbg(JSON_DBG_HIGH, __func__,
-		 "invalid: txzchk_version: %s is not TXZCHK_VERSION: %s", str, TXZCHK_VERSION);
+		 "invalid: txzchk_version: %s is not >= MIN_TXZCHK_VERSION: %s", str, MIN_TXZCHK_VERSION);
 	return false;
     }
     json_dbg(JSON_DBG_MED, __func__, "txzchk_version is valid");
@@ -4521,6 +5269,8 @@ test_alt_url(char const *str)
     }
     length = strlen(str);
     if (length > MAX_URL_LEN) {
+	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: alt_url length > max %d: <%s>", MAX_URL_LEN, str);
 	json_dbg(JSON_DBG_MED, __func__,
 		 "invalid: alt_url length %ju > max %d: <%s>", (uintmax_t)length, MAX_URL_LEN, str);
 	json_dbg(JSON_DBG_HIGH, __func__,
@@ -4631,6 +5381,8 @@ test_url(char const *str)
     length = strlen(str);
     if (length > MAX_URL_LEN) {
 	json_dbg(JSON_DBG_MED, __func__,
+		 "invalid: url length > max %d", MAX_URL_LEN);
+	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: url length %ju > max %d: <%s>", (uintmax_t)length, MAX_URL_LEN, str);
 	json_dbg(JSON_DBG_HIGH, __func__,
 		 "invalid: url: <%s> is invalid", str);
@@ -4717,3 +5469,197 @@ test_wordbuf_warning(bool boolean)
     json_dbg(JSON_DBG_MED, __func__, "wordbuf_warning is %s", booltostr(boolean));
     return true;
 }
+
+/*
+ * is_mandatory_filename  - check if str is a mandatory filename
+ *
+ *  given:
+ *          str      - name to check
+ *
+ * NOTE: if str is NULL we return false.
+ */
+bool
+is_mandatory_filename(char const *str)
+{
+    size_t i = 0;
+
+    /*
+     * firewall
+     */
+    if (str == NULL) {
+        warn(__func__, "str is NULL");
+        return false;
+    }
+
+    for (i = 0; mandatory_filenames[i] != NULL; ++i) {
+        if (!strcasecmp(mandatory_filenames[i], str)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * is_forbidden_filename  - check if str is a forbidden filename
+ *
+ *  given:
+ *          str      - name to check
+ *
+ * NOTE: if str is NULL we return false.
+ */
+bool
+is_forbidden_filename(char const *str)
+{
+    size_t i = 0;
+
+    /*
+     * firewall
+     */
+    if (str == NULL) {
+        warn(__func__, "str is NULL");
+        return false;
+    }
+
+    for (i = 0; forbidden_filenames[i] != NULL; ++i) {
+        if (!strcasecmp(forbidden_filenames[i], str)) {
+            return true;
+        }
+    }
+
+    /*
+     * also if it starts with '.' and it's not a required file that starts with
+     * a dot it is also forbidden
+     */
+    if (!is_mandatory_filename(str) && *str == '.') {
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ * is_optional_filename  - check if str is a optional filename
+ *
+ *  given:
+ *          str      - name to check
+ *
+ * NOTE: if str is NULL we return false.
+ */
+bool
+is_optional_filename(char const *str)
+{
+    size_t i = 0;
+
+    /*
+     * firewall
+     */
+    if (str == NULL) {
+        warn(__func__, "str is NULL");
+        return false;
+    }
+
+    for (i = 0; optional_filenames[i] != NULL; ++i) {
+        if (!strcasecmp(optional_filenames[i], str)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/*
+ * is_ignored_dirname  - check if str is an ignored directory name
+ *
+ *  given:
+ *          str      - name to check
+ *
+ * NOTE: if str is NULL we return false.
+ */
+bool
+is_ignored_dirname(char const *str)
+{
+    size_t i = 0;
+
+    /*
+     * firewall
+     */
+    if (str == NULL) {
+        warn(__func__, "str is NULL");
+        return false;
+    }
+
+    for (i = 0; ignored_dirnames[i] != NULL; ++i) {
+        if (!strncasecmp(ignored_dirnames[i], str, strlen(ignored_dirnames[i]))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * has_ignored_dirname   - check if path has ignored dirname in it
+ *
+ * given:
+ *
+ *      path    - path to check
+ *
+ * NOTE: this function returns false if path is NULL.
+ */
+bool
+has_ignored_dirname(char const *path)
+{
+    size_t i = 0;
+    /*
+     * firewall
+     */
+    if (path == NULL) {
+        return false;
+    } else if (*path == '\0') {
+        return false;
+    }
+
+    for (i = 0; ignored_dirnames[i] != NULL; ++i) {
+        if (path_has_component(path, ignored_dirnames[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+ * is_executable_filename  - check if str is a filename that should be 0555
+ *
+ *  given:
+ *          str      - name to check
+ *
+ * NOTE: if str is NULL we return false.
+ *
+ * If there is a match the file MUST be mode 0555.
+ */
+bool
+is_executable_filename(char const *str)
+{
+    size_t i = 0;
+
+    /*
+     * firewall
+     */
+    if (str == NULL) {
+        warn(__func__, "str is NULL");
+        return false;
+    }
+
+    for (i = 0; executable_filenames[i] != NULL; ++i) {
+        if (!strcasecmp(executable_filenames[i], str)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+

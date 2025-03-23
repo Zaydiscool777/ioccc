@@ -49,19 +49,56 @@
  *
  * The MAX_TARBALL_LEN value MUST match the MAX_TARBALL_LEN variable as defined
  * in the IOCCC submit server code.
+ *
+ * Possible mandatory files for a submission:
+ *
+ *	prog.c
+ *	Makefile
+ *	remarks.md	    (NOTE: turns into README.md for a winning entry)
+ *	.info.json	    (NOTE: ignored by mkiocccentry, error for txzchk, becomes .entry.json for a winning entry)
+ *	.auth.json	    (NOTE: ignored by mkiocccentry, error for txzchk, becomes .entry.json for a winning entry)
+ *
+ * FYI: Optional files (and sometimes encouraged) for a submission that are not considered extra:
+ *
+ *	try.sh		    (NOTE: encouraged optional file that does NOT count as an extra file if it exists)
+ *	prog.alt.c	    (NOTE: a file, if it exists, that does NOT count as an extra file if it exists)
+ *
+ * FYI: Possible mandatory files for a winning entry, not a submission, include:
+ *
+ *	prog.c
+ *	Makefile
+ *	README.md	    (NOTE: built in part from the submission remarks.md file)
+ *	.entry.json	    (NOTE: built in part from the submission .info.json and .auth.json files)
+ *	index.html	    (NOTE: built in part from the README.md file)
+ *	YYYY_name.tar.bz2   (NOTE: built from the set of winning entry directories and files)
+ *	.path		    (NOTE: error for both mkiocccentry and txzchk, while winning entries will have this file)
+ *	prog.orig.c	    (NOTE: error for both mkiocccentry and txzchk)
+ *
+ * FYI: Possible files that may be added to a winning entry:
+ *
+ *	.gitignore	    (NOTE: error for both mkiocccentry and txzchk, while winning entries may have this file)
+ *	prog.alt.c	    (NOTE: winning entries may have this file)
+ *	try.sh		    (NOTE: winning entries likely have this file)
+ *	*		    (NOTE: The IOCCC judges may add more files to a winning entry as needed)
+ *
+ * NOTE: The MANDATORY_SUBMISSION_FILES file is a limit on extra files for a submission, NOT a winning entry
+ *	 and does NOT include any mandatory files.
  */
 #define MAX_TARBALL_LEN ((off_t)(3999971))	/* compressed tarball size limit in bytes */
 #define MAX_SUM_FILELEN ((off_t)(27651*1024))	/* maximum sum of the byte lengths of all files in the entry */
-#define MANDATORY_FILE_COUNT (5)		/* number of required files in an entry */
-/* NOTE: MAX_FILE_COUNT must be > MANDATORY_FILE_COUNT */
-#define MAX_FILE_COUNT (42)		/* maximum number of files in an entry (MANDATORY_FILE_COUNT + extra files) */
-#define MAX_FILENAME_LEN (99)      /* filenames may not be > 99 in length */
-/* NOTE: MAX_SUBMIT_SLOT must be < 10 to the MAX_SUBMIT_SLOT_CHARS power */
+#define MANDATORY_SUBMISSION_FILES (5)		/* number of required files in submission */
+#define OPTIONAL_SUBMISSION_FILES (3)		/* submission files, if they exist, that do NOT count towards the extra total */
+#define MAX_EXTRA_FILE_COUNT (31)		/* maximum number of files not including mandatory submission files */
+#define MAX_EXTRA_DIR_COUNT (13)                /* maximum number of EXTRA directories */
+/* maximum total file count, including mandatory files, for a submission */
+#define MAX_FILE_COUNT (MANDATORY_SUBMISSION_FILES+OPTIONAL_SUBMISSION_FILES+MAX_EXTRA_FILE_COUNT)
 /*
  * IMPORTANT:
  *
  * The MAX_SUBMIT_SLOT value MUST match the MAX_SUBMIT_SLOT variable as defined
  * in the IOCCC submit server code.
+ *
+ * The MAX_SUBMIT_SLOT must be < 10 to the MAX_SUBMIT_SLOT_CHARS power!
  */
 #define MAX_SUBMIT_SLOT (9)		/* entry numbers from 0 to MAX_SUBMIT_SLOT */
 #define MAX_SUBMIT_SLOT_CHARS (1)	/* characters that represent the maximum entry number */
@@ -86,6 +123,14 @@
 #define TIMESTAMP_EPOCH "Thu Jan 01 00:00:00 1970 UTC"	/* gettimeofday epoch */
 #define MAX_TIMESTAMP_LEN (48)		/* 28 + 20 more padding for locate */
 #define MAX_CLOCK_ERROR ((42*60)-1)	/* maximum seconds allowed for a clock to be in error */
+
+/*
+ * submission tarballs may have subdirectories as long as they fit certain
+ * constraints
+ */
+#define MAX_FILENAME_LEN (38)    /* max path component length */
+#define MAX_PATH_DEPTH (4)       /* max depth of a subdirectory tree */
+#define MAX_PATH_LEN (99)        /* max length of a path */
 
 #define MIN_FORMED_TIMESTAMP_USEC (1)       /* minimum formed_timestamp_usec value */
 #define MAX_FORMED_TIMESTAMP_USEC (999999)  /* maximum formed_timestamp_usec value */
@@ -130,6 +175,7 @@
 
 #define IOCCC_STATUS_URL "https://www.ioccc.org/status.html"        /* status of IOCCC URL */
 #define IOCCC_ENTER_FAQ_URL "https://www.ioccc.org/faq.html#enter"  /* how to enter FAQ */
+#define IOCCC_FIND_AUTHOR_HANDLE "https://www.ioccc.org/faq.html#find_author_handle"	/* how to find an author handle */
 
 
 #endif /* ! INCLUDE_LIMIT_IOCCC_H */

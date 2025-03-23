@@ -2,9 +2,10 @@
 #
 # mkiocccentry and related tools - how to form an IOCCC submission
 #
-# For the mkiocccentry utility:
+# For mkiocccentry:
 #
-# Copyright (c) 2021-2024 by Landon Curt Noll.  All Rights Reserved.
+# Copyright (c) 2021-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and
 # its documentation for any purpose and without fee is hereby granted,
@@ -16,23 +17,32 @@
 #       source works derived from this source
 #       binaries derived from this source or from derived source
 #
-# LANDON CURT NOLL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
-# EVENT SHALL LANDON CURT NOLL BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
-# USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-# OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
-# chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+# This tool was co-developed in 2021-2025 by Cody Boone Ferguson and Landon
+# Curt Noll:
+#
+#  @xexyl
+#	https://xexyl.net		Cody Boone Ferguson
+#	https://ioccc.xexyl.net
+# and:
+#	chongo (Landon Curt Noll, http://www.isthe.com/chongo/index.html) /\oo/\
+#
+# "Because sometimes even the IOCCC Judges need some help." :-)
 #
 # Share and enjoy! :-)
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
 ####
 
 ####
 # See also, the following files for additional Copyright information:
 #
-# iocccsize.c iocccsize.h soup/rule_count.c dbg/* dyn_alloc/*
+# iocccsize.c iocccsize.h soup/rule_count.c jparse/* dbg/* dyn_alloc/*
 ####
 
 
@@ -67,6 +77,16 @@ SLEEP= sleep
 SORT= sort
 TEE= tee
 TR= tr
+
+
+##########
+# locale #
+##########
+
+LC_ALL= C
+LANG= C
+LC_NUMERIC= C
+
 
 
 ####################
@@ -197,8 +217,8 @@ C_STD= -std=gnu17
 
 # optimization and debug level
 #
-C_OPT= -O3 -g3
-#C_OPT= -O0 -g
+C_OPT= -O3
+#C_OPT= -O0 -g3
 
 # Compiler warnings
 #
@@ -235,7 +255,7 @@ CFLAGS= ${C_STD} ${C_OPT} -pedantic ${WARN_FLAGS} ${C_SPECIAL} ${LDFLAGS}
 # source files that are permanent (not made, nor removed)
 #
 C_SRC= mkiocccentry.c iocccsize.c txzchk.c chkentry.c
-H_SRC= chkentry.h mkiocccentry.h txzchk.h
+H_SRC= mkiocccentry.h iocccsize.h txzchk.h chkentry.h
 
 # source files that do not conform to strict picky standards
 #
@@ -246,7 +266,7 @@ LESS_PICKY_HSRC=
 #
 SH_FILES= bug_report.sh
 
-# all man pages that NOT built and NOT removed by make clobber
+# all man pages that are NOT built and NOT removed by make clobber
 #
 MAN1_PAGES=
 MAN3_PAGES=
@@ -344,7 +364,7 @@ SH_TARGETS=
 #
 PROG_TARGETS= mkiocccentry iocccsize txzchk chkentry
 
-# directories sometimes build under macOS and removed by clobber
+# directories sometimes built under macOS and removed by clobber
 #
 DSYMDIRS= mkiocccentry.dSYM iocccsize.dSYM txzchk.dSYM chkentry.dSYM
 
@@ -368,7 +388,7 @@ TARGETS= ${PROG_TARGETS} ${ALL_MAN_BUILT}
 # User specific configurations - override Makefile values  #
 ############################################################
 
-# The directive below retrieves any user specific configurations from makefile.local.
+# The directive below retrieves any user specific configurations from Makefile.local.
 #
 # The - before include means it's not an error if the file does not exist.
 #
@@ -771,15 +791,6 @@ all_sem_ref_ptch: soup/Makefile
 	${E} ${MAKE} ${MAKE_CD_Q} -C soup $@ C_SPECIAL="${C_SPECIAL}"
 
 
-# rebuild jparse error files for testing
-#
-# IMPORTANT: DO NOT run this rule unless you KNOW that the output produced by
-#	     jparse on each file is CORRECT!
-#
-rebuild_jparse_err_files: jparse/test_jparse/Makefile
-	${E} ${MAKE} ${MAKE_CD_Q} -C jparse/test_jparse $@ C_SPECIAL="${C_SPECIAL}" \
-		     LD_DIR2="${LD_DIR2}"
-
 # sequence exit codes
 #
 seqcexit: ${ALL_CSRC} dbg/Makefile dyn_array/Makefile jparse/Makefile \
@@ -1018,7 +1029,6 @@ test:
 		     LD_DIR="${LD_DIR}" LD_DIR2="${LD_DIR2}"
 	${E} ${MAKE} ${MAKE_CD_Q} -C soup $@ C_SPECIAL="${C_SPECIAL}"
 	${E} ${MAKE} ${MAKE_CD_Q} -C test_ioccc $@ C_SPECIAL="${C_SPECIAL}"
-	${E} ${RM} -f jparse/test_jparse/pr_jparse_test
 	${S} echo
 	${S} echo "${OUR_NAME}: make $@ ending"
 	${S} echo "All done!!! All done!! -- Jessica Noll, Age 2."
@@ -1444,10 +1454,10 @@ all.help:
 	${S} echo "make all.clone_status - git status of all clone directories"
 	${S} echo "make all.update_clone - update clone directories from all remote repos"
 	${S} echo "make all.recreate_clone - remove then clone clone directories from remote repos"
-	${S} echo "make all.update_from_clone - modify directories from clone directories"
-	${S} echo "make all.update_into_clone - modify clone directories from dbg directories"
-	${S} echo "make all.diff_dbg_clone - compare directories with clone directories"
-	${S} echo "make all.diff_clone_dbg - compare clone directories with dbg directories"
+	${S} echo "make all.update_from_clone - modify repo directories from clone directories"
+	${S} echo "make all.update_into_clone - modify clone directories from repo directories"
+	${S} echo "make all.diff_dbg_clone - compare repo directories with clone directories"
+	${S} echo "make all.diff_clone_dbg - compare clone directories with repo directories"
 	${S} echo "make all.diff_summary - summarize differnces between directories and clone directories"
 
 all.setup:
@@ -1599,7 +1609,7 @@ clobber: legacy_clobber clean dbg/Makefile dyn_array/Makefile jparse/Makefile \
 	${RM} -f .txzchk_test.*
 	${RM} -f .sorry.*
 	${RM} -f .build.*
-	${RM} -f answers.txt
+	${RM} -f answers.txt random_answers.*
 	${RM} -f ${TARGETS}
 	${RM} -rf man
 	${RM} -f jparse_test.log chkentry_test.log txzchk_test.log ${BUILD_LOG}
@@ -1736,15 +1746,19 @@ chkentry.o: chkentry.c chkentry.h dbg/dbg.h dyn_array/dyn_array.h \
     soup/chk_validate.h soup/default_handle.h soup/entry_util.h soup/foo.h \
     soup/limit_ioccc.h soup/location.h soup/sanity.h soup/soup.h \
     soup/version.h
-iocccsize.o: dbg/dbg.h iocccsize.c iocccsize.h soup/iocccsize_err.h \
-    soup/limit_ioccc.h soup/version.h
+iocccsize.o: dbg/dbg.h iocccsize.c iocccsize.h jparse/jparse.h \
+    jparse/jparse.tab.h jparse/json_parse.h jparse/json_sem.h \
+    jparse/json_utf8.h jparse/json_util.h jparse/util.h jparse/version.h \
+    soup/../dbg/dbg.h soup/../dyn_array/dyn_array.h soup/iocccsize_err.h \
+    soup/limit_ioccc.h soup/location.h soup/version.h
 mkiocccentry.o: dbg/dbg.h iocccsize.h jparse/jparse.h jparse/jparse.tab.h \
     jparse/json_parse.h jparse/json_sem.h jparse/json_utf8.h \
     jparse/json_util.h jparse/util.h jparse/version.h mkiocccentry.c \
     mkiocccentry.h soup/../dbg/dbg.h soup/../dyn_array/dyn_array.h \
     soup/chk_sem_auth.h soup/chk_sem_info.h soup/chk_validate.h \
     soup/default_handle.h soup/entry_util.h soup/limit_ioccc.h \
-    soup/location.h soup/sanity.h soup/soup.h soup/version.h
+    soup/location.h soup/random_answers.h soup/sanity.h soup/soup.h \
+    soup/version.h
 txzchk.o: dbg/dbg.h jparse/jparse.h jparse/jparse.tab.h jparse/json_parse.h \
     jparse/json_sem.h jparse/json_utf8.h jparse/json_util.h jparse/util.h \
     jparse/version.h soup/../dbg/dbg.h soup/../dyn_array/dyn_array.h \

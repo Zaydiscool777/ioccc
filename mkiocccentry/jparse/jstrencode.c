@@ -3,9 +3,30 @@
  *
  * "JSON: when a minimal design falls below a critical minimum." :-)
  *
- * This JSON parser was co-developed in 2022 by:
+ * Copyright (c) 2022-2025 by Cody Boone Ferguson and Landon Curt Noll. All
+ * rights reserved.
  *
- *	@xexyl
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright, this permission notice and text
+ * this comment, and the disclaimer below appear in all of the following:
+ *
+ *       supporting documentation
+ *       source copies
+ *       source works derived from this source
+ *       binaries derived from this source or from derived source
+ *
+ * THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+ * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE OR JSON.
+ *
+ * This JSON parser, library and tools were co-developed in 2022-2025 by Cody Boone
+ * Ferguson and Landon Curt Noll:
+ *
+ *  @xexyl
  *	https://xexyl.net		Cody Boone Ferguson
  *	https://ioccc.xexyl.net
  * and:
@@ -65,11 +86,12 @@ static const char * const usage_msg =
     "Exit codes:\n"
     "     0   encode successful\n"
     "     1   encode unsuccessful\n"
-    "     2   -h and help string printed or -V and version string printed\n"
+    "     2   -h and help string printed or -V and version strings printed\n"
     "     3   invalid command line, invalid option or option missing an argument\n"
     " >= 10   internal error\n"
     "\n"
     "%s version: %s\n"
+    "jparse utils version: %s\n"
     "jparse UTF-8 version: %s\n"
     "jparse library version: %s";
 
@@ -405,12 +427,9 @@ main(int argc, char **argv)
     char *dup_input = NULL;	/* duplicate of input w/o newlines */
 
     /*
-     * set locale
+     * use default locale based on LANG
      */
-    if (setlocale(LC_ALL, "") == NULL) {
-	err(12, __func__, "failed to set locale");
-	not_reached();
-    }
+    (void) setlocale(LC_ALL, "");
 
     /*
      * parse args
@@ -437,6 +456,7 @@ main(int argc, char **argv)
 	    break;
 	case 'V':		/* -V - print version and exit 2 */
 	    print("%s version: %s\n", JSTRENCODE_BASENAME, JSTRENCODE_VERSION);
+	    print("jparse utils version: %s\n", JPARSE_UTILS_VERSION);
 	    print("jparse UTF-8 version: %s\n", JPARSE_UTF8_VERSION);
 	    print("jparse library version: %s\n", JPARSE_LIBRARY_VERSION);
 	    exit(2); /*ooo*/
@@ -547,7 +567,7 @@ main(int argc, char **argv)
 		 */
 		dup_input = dup_without_nl(input, &inputlen);
 		if (dup_input == NULL) {
-		    err(13, __func__, "dup_without_nl failed");
+		    err(12, __func__, "dup_without_nl failed");
 		    not_reached();
 		}
 
@@ -779,7 +799,7 @@ usage(int exitcode, char const *prog, char const *str)
 	fprintf_usage(DO_NOT_EXIT, stderr, "%s\n", str);
     }
     fprintf_usage(exitcode, stderr, usage_msg, prog, DBG_DEFAULT, JSTRENCODE_BASENAME, JSTRENCODE_VERSION,
-	    JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
+	    JPARSE_UTILS_VERSION, JPARSE_UTF8_VERSION, JPARSE_LIBRARY_VERSION);
     exit(exitcode); /*ooo*/
     not_reached();
 }

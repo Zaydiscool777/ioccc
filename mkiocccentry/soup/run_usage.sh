@@ -25,7 +25,7 @@ export M_FLAG=""
 export MAN_FLAG=""
 export MAN_PAGE=""
 export MAN_DIR="./man"
-export RUN_USAGE_VERSION="1.0.1 2024-03-02"
+export RUN_USAGE_VERSION="1.0.2 2025-03-14"
 export USAGE="usage: $0 [-h] [-V] [-m section] [-M man_file] [-D man_dir] tool
 
     -h			print help and exit
@@ -49,6 +49,25 @@ Exit codes:
      7	    man directory does not exist or is not a readable directory
 
 run_usage.sh version: $RUN_USAGE_VERSION"
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 # parse args
 #

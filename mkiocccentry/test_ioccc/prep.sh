@@ -2,10 +2,30 @@
 #
 # prep.sh - prep for a release - actions for make prep and make release
 #
-# This script was co-developed in 2022 by:
+# Copyright (c) 2021-2025 by Landon Curt Noll and Cody Boone Ferguson.
+# All Rights Reserved.
 #
+# Permission to use, copy, modify, and distribute this software and
+# its documentation for any purpose and without fee is hereby granted,
+# provided that the above copyright, this permission notice and text
+# this comment, and the disclaimer below appear in all of the following:
 #
-#	@xexyl
+#       supporting documentation
+#       source copies
+#       source works derived from this source
+#       binaries derived from this source or from derived source
+#
+# THE AUTHORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+# ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHORS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY
+# DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+# CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+# This script was co-developed in 2021-2025 by Landon Curt Noll and Cody Boone
+# Ferguson:
+#
+#  @xexyl
 #	https://xexyl.net		Cody Boone Ferguson
 #	https://ioccc.xexyl.net
 # and:
@@ -14,14 +34,15 @@
 # "Because sometimes even the IOCCC Judges need some help." :-)
 #
 # Share and enjoy! :-)
-
+#     --  Sirius Cybernetics Corporation Complaints Division, JSON spec department. :-)
+#
 
 # setup
 #
 export FAILURE_SUMMARY=
 export SKIPPED_SUMMARY=
 export LOGFILE=
-export PREP_VERSION="1.0.4 2024-11-16"
+export PREP_VERSION="1.0.5 2025-03-14"
 export NOTICE_COUNT="0"
 export USAGE="usage: $0 [-h] [-v level] [-V] [-e] [-o] [-m make] [-M Makefile] [-l logfile]
 
@@ -44,6 +65,25 @@ Exit codes:
  >= 10   some make action exited non-zero
 
 prep.sh version: $PREP_VERSION"
+
+
+# IOCCC requires use of C locale
+#
+export LANG="C"
+export LC_CTYPE="C"
+export LC_NUMERIC="C"
+export LC_TIME="C"
+export LC_COLLATE="C"
+export LC_MONETARY="C"
+export LC_MESSAGES="C"
+export LC_PAPER="C"
+export LC_NAME="C"
+export LC_ADDRESS="C"
+export LC_TELEPHONE="C"
+export LC_MEASUREMENT="C"
+export LC_IDENTIFICATION="C"
+export LC_ALL="C"
+
 
 export MAKE="make"
 export MAKEFILE="./Makefile"
@@ -515,7 +555,7 @@ if [[ -n "$LOGFILE" ]]; then
 	NOTICE_SET=$(grep -E "[[:space:]]+Notice:[[:space:]]" "$LOGFILE")
 	write_logfile "$NOTICE_SET"
 	write_logfile
-	write_logfile "=-=-= End of of prep.sh notice summary"
+	write_logfile "=-=-= End of prep.sh notice summary"
     fi
 fi
 
@@ -535,7 +575,7 @@ if [[ -e "$BUG_REPORT_LOGFILE" ]]; then
 	NOTICE_SET=$(grep -E "[[:space:]]+Notice:[[:space:]]" "$BUG_REPORT_LOGFILE")
 	write_logfile "$NOTICE_SET"
 	write_logfile
-	write_logfile "=-=-= End of of make_bug_report notice summary"
+	write_logfile "=-=-= End of make_bug_report notice summary"
     fi
 fi
 
@@ -617,6 +657,44 @@ else
 	    write_echo ""
 	    write_echo "See test_ioccc/test_ioccc.log for more details."
 	fi
+    fi
+fi
+
+# Notice at the very end if we find a non-empty Makefile.local containing non-comments
+#
+# Because this is just a potential warning, we do not perform this as an action.
+#
+export NOT_A_COMMENT="soup/not_a_comment.sh"
+if [[ ! -e $NOT_A_COMMENT ]]; then
+    write_echo "Warning: executable not found: $NOT_A_COMMENT"
+elif [[ ! -f $NOT_A_COMMENT ]]; then
+    write_echo "Warning: not a file: $NOT_A_COMMENT"
+elif [[ ! -x $NOT_A_COMMENT ]]; then
+    write_echo "Warning: not an executable file: $NOT_A_COMMENT"
+else
+    # SC2046 (warning): Quote this to prevent word splitting.
+    #
+    # The paths printed by find will not word split.
+    #
+    # https://www.shellcheck.net/wiki/SC2046
+    # shellcheck disable=SC2046
+    if ! "$NOT_A_COMMENT" $(find . -name 'Makefile.local' -print 2>/dev/null) >/dev/null 2>&1; then
+	write_echo ""
+	write_echo "Notice: Found non-comments in some Makefile.local file(s)."
+	write_echo "Notice: Be sure that these Makefile.local file(s) are not complicating the results above."
+	write_logfile
+	write_logfile "=-=-= output from soup/not_a_comment.sh -v 1 follows:"
+	write_logfile
+	# SC2046 (warning): Quote this to prevent word splitting.
+	#
+	# The paths printed by find will not word split.
+	#
+	# https://www.shellcheck.net/wiki/SC2046
+	# shellcheck disable=SC2046
+	FOUND=$("$NOT_A_COMMENT" -v 1 $(find . -name 'Makefile.local' -print 2>/dev/null) 2>&1)
+	write_logfile "$FOUND"
+	write_logfile
+	write_logfile "=-=-= End of output from soup/not_a_comment.sh -v 1"
     fi
 fi
 
